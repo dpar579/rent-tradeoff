@@ -35,8 +35,10 @@
             </div>
             <div id="property-form">
             </div>
-            <button onclick="analyzeProperty()">매물 평가 및 저장</button>
-            <button onclick="goToStep1()" style="background: #95a5a6; margin-top: 10px;">이전 단계로 (선호도 설정)</button>
+            <div class="button-group" style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="analyzeProperty()" style="flex: 1;">매물 평가 및 저장</button>
+                <button onclick="goToStep1()" style="background: #95a5a6; width: auto; white-space: nowrap; padding: 12px 20px;">선호도 재설정</button>
+            </div>
         </div>
 
         <div class="section result" id="result-section" style="display:none;">

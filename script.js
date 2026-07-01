@@ -27,11 +27,11 @@ window.onload = function () {
                 <div class="weight-buttons" id="w-container-${c.id}">
                     <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 1)">1</button>
                     <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 2)">2</button>
-                    <button type="button" class="w-btn w-active" onclick="selectWeight('${c.id}', 3)">3</button>
+                    <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 3)">3</button>
                     <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 4)">4</button>
                     <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 5)">5</button>
                 </div>
-                <input type="hidden" id="w-${c.id}" value="3">
+                <input type="hidden" id="w-${c.id}" value="">
             </div>`;
 
         // 매물 점수 입력 UI
@@ -41,9 +41,9 @@ window.onload = function () {
                     <label>${c.label}</label>
                     <div class="weight-buttons" id="p-container-${c.id}">
                         <button type="button" class="w-btn" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 5)">Yes</button>
-                        <button type="button" class="w-btn w-active" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 1)">No</button>
+                        <button type="button" class="w-btn" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 1)">No</button>
                     </div>
-                    <input type="hidden" id="p-${c.id}" value="1">
+                    <input type="hidden" id="p-${c.id}" value="">
                 </div>`;
         } else {
             propForm.innerHTML += `
@@ -52,24 +52,61 @@ window.onload = function () {
                     <div class="weight-buttons" id="p-container-${c.id}">
                         <button type="button" class="w-btn" onclick="selectScore('${c.id}', 1)">1</button>
                         <button type="button" class="w-btn" onclick="selectScore('${c.id}', 2)">2</button>
-                        <button type="button" class="w-btn w-active" onclick="selectScore('${c.id}', 3)">3</button>
+                        <button type="button" class="w-btn" onclick="selectScore('${c.id}', 3)">3</button>
                         <button type="button" class="w-btn" onclick="selectScore('${c.id}', 4)">4</button>
                         <button type="button" class="w-btn" onclick="selectScore('${c.id}', 5)">5</button>
                     </div>
-                    <input type="hidden" id="p-${c.id}" value="3">
+                    <input type="hidden" id="p-${c.id}" value="">
                 </div>`;
         }
     });
+
+    // 로컬 스토리지 데이터 복원
+    // 로컬 스토리지 데이터 복원
+    const savedList = localStorage.getItem("propertyList");
+    if (savedList) {
+        propertyList = JSON.parse(savedList);
+        updateRankingTable();
+    }
+
+    // 로컬 스토리지 가중치 데이터 복원
+    const savedWeights = localStorage.getItem("weights");
+    if (savedWeights) {
+        loadSavedWeights(JSON.parse(savedWeights));
+    }
 };
 
 // 단계 이동 함수
 function startApp() {
     document.getElementById("title-section").style.display = "none";
     document.getElementById("app-header").style.display = "block";
-    document.getElementById("step1-section").style.display = "block";
+    
+    const savedWeights = localStorage.getItem("weights");
+    if (savedWeights) {
+        // 이미 가중치가 설정되어 있다면 복원 후 바로 2단계로
+        loadSavedWeights(JSON.parse(savedWeights));
+        document.getElementById("step2-section").style.display = "block";
+    } else {
+        // 처음이면 1단계로
+        document.getElementById("step1-section").style.display = "block";
+    }
 }
 
 function goToStep2() {
+    // 모든 가중치가 선택되었는지 검증 및 수집
+    const weights = {};
+    for (let c of criteria) {
+        const val = document.getElementById(`w-${c.id}`).value;
+        if (!val) {
+            alert(`나의 선호도 설정에서 [${c.label}] 가중치를 선택해 주세요.`);
+            return;
+        }
+        weights[c.id] = Number(val);
+    }
+    
+    // 가중치를 로컬 스토리지에 저장
+    localStorage.setItem("weights", JSON.stringify(weights));
+
     document.getElementById("step1-section").style.display = "none";
     document.getElementById("step2-section").style.display = "block";
 }
@@ -77,6 +114,24 @@ function goToStep2() {
 function goToStep1() {
     document.getElementById("step1-section").style.display = "block";
     document.getElementById("step2-section").style.display = "none";
+}
+
+function loadSavedWeights(weights) {
+    criteria.forEach(c => {
+        const value = weights[c.id];
+        if (value) {
+            document.getElementById(`w-${c.id}`).value = value;
+            
+            const container = document.getElementById(`w-container-${c.id}`);
+            if (container) {
+                const buttons = container.getElementsByClassName("w-btn");
+                for (let btn of buttons) {
+                    btn.classList.remove("w-active");
+                }
+                buttons[value - 1].classList.add("w-active");
+            }
+        }
+    });
 }
 
 function selectWeight(id, value) {
@@ -136,6 +191,15 @@ function analyzeProperty() {
     const name = document.getElementById("prop-name").value.trim();
     if (!name) return alert("매물 이름을 입력하세요.");
 
+    // 모든 점수가 선택되었는지 검증
+    for (let c of criteria) {
+        const val = document.getElementById(`p-${c.id}`).value;
+        if (!val) {
+            alert(`매물 점수 입력에서 [${c.label}] 점수를 선택해 주세요.`);
+            return;
+        }
+    }
+
     let totalScore = 0;
     let maxPossibleScore = 0;
 
@@ -153,6 +217,9 @@ function analyzeProperty() {
     // 리스트 저장 및 정렬
     propertyList.push({ name, score: Number(finalScore) });
     propertyList.sort((a, b) => b.score - a.score);
+
+    // 로컬 스토리지에 저장
+    localStorage.setItem("propertyList", JSON.stringify(propertyList));
 
     updateRankingTable();
 }
