@@ -1,47 +1,50 @@
-1
 <!DOCTYPE html>
 <html lang="ko">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>집 매물 분석기</title>
+    <title>Renting TradeOff</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
     <div class="container">
-        <h1>🏠 집 매물 분석기</h1>
+        <h1>⚖️ Renting TradeOff</h1>
 
-        <div class="input-group">
-            <label>매매가 (만원)</label>
-            <input type="number" id="price">
+        <div class="section" id="step1-section">
+            <h2>1. 나의 선호도 설정 (Weighting: 1~5)</h2>
+            <div id="weighting-form">
+            </div>
+            <button onclick="goToStep2()" style="margin-top: 15px;">Next</button>
         </div>
 
-        <div class="input-group">
-            <label>전세가 (만원)</label>
-            <input type="number" id="jeonse">
+        <div class="section" id="step2-section" style="display:none;">
+            <h2>2. 매물 점수 입력 (Score: 1~5)</h2>
+            <div class="input-group">
+                <label>매물 이름/닉네임</label>
+                <input type="text" id="prop-name" placeholder="예: 브리즈번 시티 아파트">
+            </div>
+            <div id="property-form">
+            </div>
+            <button onclick="analyzeProperty()">매물 평가 및 저장</button>
+            <button onclick="goToStep1()" style="background: #95a5a6; margin-top: 10px;">이전 단계로 (선호도 설정)</button>
         </div>
 
-        <div class="input-group">
-            <label>월세 (만원, 없으면 0)</label>
-            <input type="number" id="rent" value="0">
-        </div>
-
-        <div class="input-group">
-            <label>면적 (㎡)</label>
-            <input type="number" id="area">
-        </div>
-
-        <button onclick="analyze()">분석하기</button>
-
-        <div class="result" id="result">
-            <h2>분석 결과</h2>
-            <p>여기에 결과가 표시됩니다.</p>
+        <div class="section result" id="result-section" style="display:none;">
+            <h2>📊 매물 비교 랭킹</h2>
+            <table id="ranking-table">
+                <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>매물명</th>
+                        <th>총점</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-body"></tbody>
+            </table>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 

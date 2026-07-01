@@ -1,57 +1,102 @@
-function analyze(){
+// 10가지 평가 기준 정의 (Garage만 Y/N형, 나머지는 1~5 점수형)
+const criteria = [
+    { id: "commute", label: "Commute time" },
+    { id: "price", label: "Price" },
+    { id: "age", label: "Age" },
+    { id: "infra", label: "Dist. to Infra." },
+    { id: "water", label: "Water Bill" },
+    { id: "gas_elec", label: "Gas/Elec. Bill" },
+    { id: "floor_mat", label: "Floor material" },
+    { id: "garage", label: "Garage (O/X)", type: "binary" },
+    { id: "stairs", label: "Floor height / Stairs" },
+    { id: "security", label: "Security" }
+];
 
-let price = Number(document.getElementById("price").value);
-let jeonse = Number(document.getElementById("jeonse").value);
-let rent = Number(document.getElementById("rent").value);
-let area = Number(document.getElementById("area").value);
+let propertyList = [];
 
-if(price<=0 || area<=0){
-    alert("매매가와 면적을 입력하세요.");
-    return;
+// 초기 UI 생성
+window.onload = function () {
+    const weightForm = document.getElementById("weighting-form");
+    const propForm = document.getElementById("property-form");
+
+    criteria.forEach(c => {
+        // 가중치 입력 UI (1~5 정수)
+        weightForm.innerHTML += `
+            <div class="input-inline">
+                <label>${c.label}</label>
+                <input type="number" id="w-${c.id}" min="1" max="5" value="3">
+            </div>`;
+
+        // 매물 점수 입력 UI
+        if (c.type === "binary") {
+            propForm.innerHTML += `
+                <div class="input-inline">
+                    <label>${c.label}</label>
+                    <select id="p-${c.id}">
+                        <option value="5">Yes (5점)</option>
+                        <option value="1">No (1점)</option>
+                    </select>
+                </div>`;
+        } else {
+            propForm.innerHTML += `
+                <div class="input-inline">
+                    <label>${c.label} 점수</label>
+                    <input type="number" id="p-${c.id}" min="1" max="5" value="3" placeholder="1~5점">
+                </div>`;
+        }
+    });
+};
+
+// 단계 이동 함수
+function goToStep2() {
+    document.getElementById("step1-section").style.display = "none";
+    document.getElementById("step2-section").style.display = "block";
 }
 
-let gap = price - jeonse;
-
-let per = (price/area).toFixed(1);
-
-let opinion="";
-let cls="";
-
-if(gap<=5000){
-    opinion="매우 좋은 갭투자 매물";
-    cls="good";
-}
-else if(gap<=15000){
-    opinion="평균 수준의 투자";
-    cls="normal";
-}
-else{
-    opinion="초기 투자금이 큰 편";
-    cls="bad";
+function goToStep1() {
+    document.getElementById("step1-section").style.display = "block";
+    document.getElementById("step2-section").style.display = "none";
 }
 
-let rentText="없음";
+// 매물 평가 실행 및 저장
+function analyzeProperty() {
+    const name = document.getElementById("prop-name").value.trim();
+    if (!name) return alert("매물 이름을 입력하세요.");
 
-if(rent>0){
-    rentText=rent+"만원";
+    let totalScore = 0;
+    let maxPossibleScore = 0;
+
+    criteria.forEach(c => {
+        const weight = Number(document.getElementById(`w-${c.id}`).value) || 0;
+        const score = Number(document.getElementById(`p-${c.id}`).value) || 0;
+
+        totalScore += weight * score;
+        maxPossibleScore += weight * 5; // 항목당 가중치 * 만점(5점)
+    });
+
+    // 100점 만점 기준으로 환산 (선택사항, 스케일 통일용)
+    const finalScore = ((totalScore / maxPossibleScore) * 100).toFixed(1);
+
+    // 리스트 저장 및 정렬
+    propertyList.push({ name, score: Number(finalScore) });
+    propertyList.sort((a, b) => b.score - a.score);
+
+    updateRankingTable();
 }
 
-document.getElementById("result").innerHTML=`
+// 테이블 갱신
+function updateRankingTable() {
+    const body = document.getElementById("ranking-body");
+    body.innerHTML = "";
 
-<h2>📊 분석 결과</h2>
+    propertyList.forEach((prop, index) => {
+        body.innerHTML += `
+            <tr>
+                <td>${index + 1}위</td>
+                <td><b>${prop.name}</b></td>
+                <td><span class="score-tag">${prop.score}점</span></td>
+            </tr>`;
+    });
 
-<p><b>매매가</b> : ${price.toLocaleString()} 만원</p>
-
-<p><b>전세가</b> : ${jeonse.toLocaleString()} 만원</p>
-
-<p><b>월세</b> : ${rentText}</p>
-
-<p><b>갭 투자금</b> : ${gap.toLocaleString()} 만원</p>
-
-<p><b>㎡당 가격</b> : ${per} 만원</p>
-
-<p class="${cls}">${opinion}</p>
-
-`;
-
+    document.getElementById("result-section").style.display = "block";
 }
