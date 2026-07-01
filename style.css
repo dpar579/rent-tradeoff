@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Inter:wght@700;900&display=swap');
+
 body {
     font-family: Arial, sans-serif;
     background: #f4f6f9;
@@ -148,4 +150,24 @@ th {
 
 .go-btn:active {
     transform: translateY(0);
+}
+
+/* Title Phrase styles */
+.title-phrase {
+    font-size: 2.4rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.stress-text {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 500;
+    color: #555;
+}
+
+.choice-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    color: #2c3e50;
+    letter-spacing: -0.5px;
 }
