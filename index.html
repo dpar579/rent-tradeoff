@@ -1,0 +1,48 @@
+1
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>집 매물 분석기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>🏠 집 매물 분석기</h1>
+
+        <div class="input-group">
+            <label>매매가 (만원)</label>
+            <input type="number" id="price">
+        </div>
+
+        <div class="input-group">
+            <label>전세가 (만원)</label>
+            <input type="number" id="jeonse">
+        </div>
+
+        <div class="input-group">
+            <label>월세 (만원, 없으면 0)</label>
+            <input type="number" id="rent" value="0">
+        </div>
+
+        <div class="input-group">
+            <label>면적 (㎡)</label>
+            <input type="number" id="area">
+        </div>
+
+        <button onclick="analyze()">분석하기</button>
+
+        <div class="result" id="result">
+            <h2>분석 결과</h2>
+            <p>여기에 결과가 표시됩니다.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
