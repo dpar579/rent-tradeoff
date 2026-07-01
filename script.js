@@ -39,22 +39,36 @@ window.onload = function () {
             propForm.innerHTML += `
                 <div class="input-inline">
                     <label>${c.label}</label>
-                    <select id="p-${c.id}">
-                        <option value="5">Yes (5점)</option>
-                        <option value="1">No (1점)</option>
-                    </select>
+                    <div class="weight-buttons" id="p-container-${c.id}">
+                        <button type="button" class="w-btn" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 5)">Yes</button>
+                        <button type="button" class="w-btn w-active" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 1)">No</button>
+                    </div>
+                    <input type="hidden" id="p-${c.id}" value="1">
                 </div>`;
         } else {
             propForm.innerHTML += `
                 <div class="input-inline">
                     <label>${c.label} 점수</label>
-                    <input type="number" id="p-${c.id}" min="1" max="5" value="3" placeholder="1~5점">
+                    <div class="weight-buttons" id="p-container-${c.id}">
+                        <button type="button" class="w-btn" onclick="selectScore('${c.id}', 1)">1</button>
+                        <button type="button" class="w-btn" onclick="selectScore('${c.id}', 2)">2</button>
+                        <button type="button" class="w-btn w-active" onclick="selectScore('${c.id}', 3)">3</button>
+                        <button type="button" class="w-btn" onclick="selectScore('${c.id}', 4)">4</button>
+                        <button type="button" class="w-btn" onclick="selectScore('${c.id}', 5)">5</button>
+                    </div>
+                    <input type="hidden" id="p-${c.id}" value="3">
                 </div>`;
         }
     });
 };
 
 // 단계 이동 함수
+function startApp() {
+    document.getElementById("title-section").style.display = "none";
+    document.getElementById("app-header").style.display = "block";
+    document.getElementById("step1-section").style.display = "block";
+}
+
 function goToStep2() {
     document.getElementById("step1-section").style.display = "none";
     document.getElementById("step2-section").style.display = "block";
@@ -79,6 +93,42 @@ function selectWeight(id, value) {
     
     // hidden input 값 업데이트
     document.getElementById(`w-${id}`).value = value;
+}
+
+function selectScore(id, value) {
+    const container = document.getElementById(`p-container-${id}`);
+    const buttons = container.getElementsByClassName("w-btn");
+    
+    // 모든 버튼에서 active 클래스 제거
+    for (let btn of buttons) {
+        btn.classList.remove("w-active");
+    }
+    
+    // 선택한 버튼에 active 클래스 추가
+    buttons[value - 1].classList.add("w-active");
+    
+    // hidden input 값 업데이트
+    document.getElementById(`p-${id}`).value = value;
+}
+
+function selectScoreBinary(id, value) {
+    const container = document.getElementById(`p-container-${id}`);
+    const buttons = container.getElementsByClassName("w-btn");
+    
+    // 모든 버튼에서 active 클래스 제거
+    for (let btn of buttons) {
+        btn.classList.remove("w-active");
+    }
+    
+    // Yes(5점)는 첫 번째 버튼(index 0), No(1점)는 두 번째 버튼(index 1)
+    if (value === 5) {
+        buttons[0].classList.add("w-active");
+    } else {
+        buttons[1].classList.add("w-active");
+    }
+    
+    // hidden input 값 업데이트
+    document.getElementById(`p-${id}`).value = value;
 }
 
 // 매물 평가 실행 및 저장

@@ -10,9 +10,17 @@
 
 <body>
     <div class="container">
-        <h1>⚖️ Renting TradeOff</h1>
+        <h1 id="app-header" style="display: none;">⚖️ Renting TradeOff</h1>
 
-        <div class="section" id="step1-section">
+        <!-- 타이틀 페이지 섹션 -->
+        <div class="section" id="title-section" style="text-align: center; padding: 60px 20px;">
+            <div class="main-emoji" style="font-size: 64px; margin-bottom: 20px;">⚖️</div>
+            <h1 style="font-size: 2.2rem; margin-bottom: 10px; color: #2c3e50;">Renting TradeOff</h1>
+            <p class="title-subtitle" style="font-size: 1.25rem; color: #7f8c8d; margin-bottom: 40px; font-weight: 500;">Zero Stress, Best Choice.</p>
+            <button onclick="startApp()" class="go-btn" style="max-width: 180px; margin: 0 auto; display: block; font-size: 18px; padding: 14px; border-radius: 30px;">GO</button>
+        </div>
+
+        <div class="section" id="step1-section" style="display: none;">
             <h2>1. 나의 선호도 설정 (Weighting: 1~5)</h2>
             <div id="weighting-form">
             </div>
