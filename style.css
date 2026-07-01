@@ -101,3 +101,36 @@ th {
     font-size: 13px;
     font-weight: bold;
 }
+
+/* Weighting Segment Buttons */
+.weight-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.w-btn {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    color: #333333 !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.w-btn:hover {
+    background: #f0f0f0 !important;
+}
+
+.w-btn.w-active {
+    background: #3498db !important;
+    color: #ffffff !important;
+    border-color: #3498db !important;
+}

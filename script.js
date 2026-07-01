@@ -20,11 +20,18 @@ window.onload = function () {
     const propForm = document.getElementById("property-form");
 
     criteria.forEach(c => {
-        // 가중치 입력 UI (1~5 정수)
+        // 가중치 입력 UI (1~5 버튼 선택형)
         weightForm.innerHTML += `
             <div class="input-inline">
                 <label>${c.label}</label>
-                <input type="number" id="w-${c.id}" min="1" max="5" value="3">
+                <div class="weight-buttons" id="w-container-${c.id}">
+                    <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 1)">1</button>
+                    <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 2)">2</button>
+                    <button type="button" class="w-btn w-active" onclick="selectWeight('${c.id}', 3)">3</button>
+                    <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 4)">4</button>
+                    <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 5)">5</button>
+                </div>
+                <input type="hidden" id="w-${c.id}" value="3">
             </div>`;
 
         // 매물 점수 입력 UI
@@ -56,6 +63,22 @@ function goToStep2() {
 function goToStep1() {
     document.getElementById("step1-section").style.display = "block";
     document.getElementById("step2-section").style.display = "none";
+}
+
+function selectWeight(id, value) {
+    const container = document.getElementById(`w-container-${id}`);
+    const buttons = container.getElementsByClassName("w-btn");
+    
+    // 모든 버튼에서 active 클래스 제거
+    for (let btn of buttons) {
+        btn.classList.remove("w-active");
+    }
+    
+    // 선택한 버튼에 active 클래스 추가
+    buttons[value - 1].classList.add("w-active");
+    
+    // hidden input 값 업데이트
+    document.getElementById(`w-${id}`).value = value;
 }
 
 // 매물 평가 실행 및 저장
