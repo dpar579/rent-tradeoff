@@ -12,8 +12,10 @@ body {
     margin: auto;
     background: white;
     padding: 25px;
+    padding-top: 12px;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 h1,
@@ -37,6 +39,33 @@ h2 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    gap: 6px;
+}
+
+/* X 버튼 — 항목 행 맨 왼쪽 */
+.remove-inline-btn {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: #e0e0e0 !important;
+    color: #888 !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s !important;
+    line-height: 1 !important;
+}
+
+.remove-inline-btn:hover {
+    background: #e74c3c !important;
+    color: #fff !important;
 }
 
 label {
@@ -170,4 +199,229 @@ th {
     font-weight: 900;
     color: #2c3e50;
     letter-spacing: -0.5px;
+}
+
+/* Premium Unlock Banner styling */
+.premium-banner {
+    margin-top: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+    animation: bannerFadeIn 0.5s ease-out;
+}
+
+.premium-banner .banner-text {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.premium-banner .banner-icon {
+    font-size: 24px;
+}
+
+.premium-banner .unlock-btn {
+    background: #ffd700;
+    color: #333;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    width: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.premium-banner .unlock-btn:hover {
+    background: #ffea00;
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes bannerFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Language Selection Bar Styles */
+.lang-selector {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    padding: 10px 0 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.lang-selector .lang-btn {
+    width: auto;
+    padding: 5px 11px;
+    font-size: 12px;
+    border-radius: 20px;
+    background: #ffffff;
+    color: #555555;
+    border: 1px solid #cccccc;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lang-selector .lang-btn:hover {
+    background: #f5f5f5;
+    border-color: #999999;
+    color: #555555;
+}
+
+.lang-selector .lang-btn.active {
+    background: #3498db;
+    color: #ffffff;
+    border-color: #3498db;
+    font-weight: bold;
+}
+
+.lang-selector .lang-btn.active:hover {
+    background: #2980b9;
+    color: #ffffff;
+}
+
+/* Ranking Table Action Buttons */
+#ranking-table td button.ranking-btn {
+    width: auto;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 0 2px;
+    display: inline-block;
+    border: none;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+#ranking-table td button.ranking-btn:active {
+    transform: scale(0.95);
+}
+
+#ranking-table td button.edit-btn {
+    background: #7f8c8d;
+    color: white;
+}
+
+#ranking-table td button.edit-btn:hover {
+    background: #626f70;
+}
+
+#ranking-table td button.delete-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+#ranking-table td button.delete-btn:hover {
+    background: #c0392b;
+}
+
+/* Custom Attribute Add UI */
+.add-attr-section {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #f8f9fa;
+    border: 1px dashed #bbb;
+    border-radius: 10px;
+}
+
+.add-attr-section .add-attr-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.add-attr-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.add-attr-row input[type="text"] {
+    flex: 1;
+    min-width: 120px;
+    width: auto;
+    padding: 7px 10px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.add-attr-row select {
+    padding: 7px 10px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+}
+
+.add-attr-btn {
+    width: auto !important;
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+    background: #27ae60 !important;
+    color: white !important;
+    font-weight: bold !important;
+    white-space: nowrap;
+    transition: background 0.2s ease !important;
+}
+
+.add-attr-btn:hover {
+    background: #219a52 !important;
+}
+
+.custom-attr-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 13px;
+    color: #444;
+    border-bottom: 1px solid #eee;
+}
+
+.custom-attr-item:last-child {
+    border-bottom: none;
+}
+
+.custom-attr-item .remove-attr-btn {
+    width: auto !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
+    background: #e74c3c !important;
+    color: white !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+    transition: background 0.2s !important;
+}
+
+.custom-attr-item .remove-attr-btn:hover {
+    background: #c0392b !important;
 }

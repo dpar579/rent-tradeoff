@@ -10,45 +10,74 @@
 
 <body>
     <div class="container">
+        <!-- 언어 선택 바 (Language Selector) -->
+        <div class="lang-selector">
+            <button class="lang-btn" id="lang-ko" onclick="changeLanguage('ko')">한국어</button>
+            <button class="lang-btn" id="lang-en" onclick="changeLanguage('en')">English</button>
+            <button class="lang-btn" id="lang-zh" onclick="changeLanguage('zh')">中文</button>
+        </div>
+
         <h1 id="app-header" style="display: none;">⚖️ Renting TradeOff</h1>
 
         <!-- 타이틀 페이지 섹션 -->
         <div class="section" id="title-section" style="text-align: center; padding: 100px 20px;">
             <div class="title-phrase">
-                <span class="stress-text">Zero Stress</span>, <span class="choice-text">Best Choice</span>.
+                <span id="title-stress" class="stress-text">Zero Stress</span>, <span id="title-choice" class="choice-text">Best Choice</span>.
             </div>
-            <button onclick="startApp()" class="go-btn" style="max-width: 180px; margin: 40px auto 0; display: block; font-size: 18px; padding: 14px; border-radius: 30px;">GO</button>
+            <button id="go-btn" onclick="startApp()" class="go-btn" style="max-width: 180px; margin: 40px auto 0; display: block; font-size: 18px; padding: 14px; border-radius: 30px;">GO</button>
+            <div id="unlock-banner" class="premium-banner" style="display: none; margin-top: 40px;">
+                <span class="banner-icon">✨</span>
+                <span id="unlock-banner-text" class="banner-text">More options? Unlock unlimited listings for 30 days for just $4.99</span>
+                <button id="unlock-banner-btn" class="unlock-btn" onclick="unlockApp()">Unlock Now</button>
+            </div>
         </div>
 
         <div class="section" id="step1-section" style="display: none;">
-            <h2>1. 나의 선호도 설정 (Weighting: 1~5)</h2>
+            <h2 id="step1-header">1. 나의 선호도 설정 (Weighting: 1~5)</h2>
             <div id="weighting-form">
             </div>
-            <button onclick="goToStep2()" style="margin-top: 15px;">Next</button>
+            <button id="step1-next-btn" onclick="goToStep2()" style="margin-top: 15px;">Next</button>
         </div>
 
         <div class="section" id="step2-section" style="display:none;">
-            <h2>2. 매물 점수 입력 (Score: 1~5)</h2>
+            <h2 id="step2-header">2. 매물 점수 입력 (Score: 1~5)</h2>
             <div class="input-group">
-                <label>매물 이름/닉네임</label>
-                <input type="text" id="prop-name" placeholder="예: 브리즈번 시티 아파트">
+                <label id="prop-name-label">매물 이름/닉네임</label>
+                <input type="text" id="prop-name" placeholder="예: 지역 이름">
             </div>
             <div id="property-form">
             </div>
+            <!-- 커스텀 항목 추가 UI -->
+            <div class="add-attr-section">
+                <div class="add-attr-title">
+                    <span>➕</span>
+                    <span id="add-attr-title-text">항목 추가 (최대 15개)</span>
+                </div>
+                <div class="add-attr-row">
+                    <input type="text" id="new-attr-name" placeholder="항목명 입력">
+                    <select id="new-attr-type">
+                        <option value="rating">점수형 (1~5)</option>
+                        <option value="binary">Y/N형</option>
+                    </select>
+                    <button type="button" class="add-attr-btn" onclick="addCustomAttribute()">+ 추가</button>
+                </div>
+                <div id="custom-attr-list" style="margin-top: 10px;"></div>
+            </div>
             <div class="button-group" style="display: flex; gap: 10px; margin-top: 15px;">
-                <button onclick="analyzeProperty()" style="flex: 1;">매물 평가 및 저장</button>
-                <button onclick="goToStep1()" style="background: #95a5a6; width: auto; white-space: nowrap; padding: 12px 20px;">선호도 재설정</button>
+                <button id="submit-btn" onclick="analyzeProperty()" style="flex: 1;">매물 평가 및 저장</button>
+                <button id="reset-btn" onclick="goToStep1()" style="background: #95a5a6; width: auto; white-space: nowrap; padding: 12px 20px;">선호도 재설정</button>
             </div>
         </div>
 
         <div class="section result" id="result-section" style="display:none;">
-            <h2>📊 매물 비교 랭킹</h2>
+            <h2 id="result-header">📊 매물 비교 랭킹</h2>
             <table id="ranking-table">
                 <thead>
                     <tr>
-                        <th>순위</th>
-                        <th>매물명</th>
-                        <th>총점</th>
+                        <th id="th-rank">순위</th>
+                        <th id="th-name">매물명</th>
+                        <th id="th-score">총점</th>
+                        <th id="th-action">관리</th>
                     </tr>
                 </thead>
                 <tbody id="ranking-body"></tbody>
