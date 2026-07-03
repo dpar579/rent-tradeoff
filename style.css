@@ -42,7 +42,25 @@ h2 {
     gap: 6px;
 }
 
-/* X 버튼 — 항목 행 맨 왼쪽 */
+#property-form .input-inline {
+    justify-content: flex-start;
+}
+
+#property-form .input-inline label {
+    order: 1;
+    text-align: left;
+}
+
+#property-form .input-inline .weight-buttons {
+    order: 2;
+}
+
+#property-form .input-inline .remove-inline-btn {
+    order: 3;
+    margin-left: auto;
+}
+
+/* X 버튼 */
 .remove-inline-btn {
     width: 20px !important;
     height: 20px !important;

@@ -834,9 +834,6 @@ function analyzeProperty() {
         document.getElementById("title-section").scrollIntoView({ behavior: "smooth" });
     }
 
-    if (propertyList.length >= 3 && localStorage.getItem("isUnlocked") !== "true") {
-        alert(translations[currentLang].alertMoreOptions);
-    }
 }
 
 // 테이블 갱신
