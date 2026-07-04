@@ -21,9 +21,37 @@ const MAX_CRITERIA = 15;  // 기본 항목 + 커스텀 합산 최대 15개
 let preferenceOpen = false;
 let propertyOpen = false;
 let hasVisitedApp = false;
+const APP_ROUTE = "#/app";
+
+// 현재 URL 해시에 맞춰 타이틀 화면 / 앱 화면을 전환 (뒤로/앞으로가기 버튼 대응)
+function applyRoute() {
+    const isAppView = location.hash === APP_ROUTE;
+    document.getElementById("title-section").style.display = isAppView ? "none" : "block";
+    document.getElementById("app-header").style.display = isAppView ? "block" : "none";
+    document.getElementById("step1-section").style.display = isAppView ? "block" : "none";
+    document.getElementById("step2-section").style.display = isAppView ? "block" : "none";
+}
+
+window.addEventListener("hashchange", applyRoute);
 
 function criterionLabel(lang, c) {
     return translations[lang].criteria[c.id] || c.label;
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+}
+
+function readStoredJSON(key, fallback) {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        return fallback;
+    }
 }
 
 function clearActiveButtons(container) {
@@ -40,10 +68,10 @@ function setActiveButton(container, value, binary) {
 }
 
 function criterionRowHtml(c, lang, custom = false) {
-    const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`; 
+    const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`;
     return `
         <button type="button" class="remove-inline-btn" ${remove} title="Remove">✕</button>
-        <label id="w-label-${c.id}">${custom ? c.label : criterionLabel(lang, c)}</label>
+        <label id="w-label-${c.id}">${custom ? escapeHtml(c.label) : criterionLabel(lang, c)}</label>
         <div class="weight-buttons" id="w-container-${c.id}">
             <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 1)">1</button>
             <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 2)">2</button>
@@ -56,8 +84,8 @@ function criterionRowHtml(c, lang, custom = false) {
 }
 
 function propertyRowHtml(c, lang, custom = false) {
-    const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`; 
-    const label = custom ? c.label : criterionLabel(lang, c);
+    const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`;
+    const label = custom ? escapeHtml(c.label) : criterionLabel(lang, c);
     return `
         <button type="button" class="remove-inline-btn" ${remove} title="Remove">✕</button>
         <label id="p-label-${c.id}">${label}${c.type === "binary" ? "" : translations[lang].scoreLabelSuffix}</label>
@@ -248,30 +276,25 @@ const translations = {
 
 // 초기 UI 생성
 window.onload = function () {
-    // 저장된 언어 불러오기 (기본값: 한국어)
-    currentLang = localStorage.getItem("selectedLang") || "ko";
+    // 저장된 언어 불러오기 (기본값: 영어)
+    currentLang = localStorage.getItem("selectedLang") || "en";
 
     // 삭제된 기본 항목 복원
-    const savedRemoved = localStorage.getItem("removedBuiltinIds");
-    if (savedRemoved) {
-        removedBuiltinIds = JSON.parse(savedRemoved);
+    removedBuiltinIds = readStoredJSON("removedBuiltinIds", []);
+    if (removedBuiltinIds.length) {
         criteria = DEFAULT_CRITERIA.filter(c => !removedBuiltinIds.includes(c.id));
     }
 
     // 저장된 커스텀 항목 복원
-    const savedCustom = localStorage.getItem("customCriteria");
-    if (savedCustom) {
-        customCriteria = JSON.parse(savedCustom);
-    }
+    customCriteria = readStoredJSON("customCriteria", []);
 
     // 언어에 맞게 입력 UI 생성
     renderForms();
     renderCustomAttrList();
 
     // 로컬 스토리지 데이터 복원
-    const savedList = localStorage.getItem("propertyList");
-    if (savedList) {
-        propertyList = JSON.parse(savedList);
+    propertyList = readStoredJSON("propertyList", []);
+    if (propertyList.length) {
         propertyList.forEach(prop => {
             if (!prop.id) prop.id = Date.now() + Math.random();
             if (!prop.scores) prop.scores = {};
@@ -280,13 +303,16 @@ window.onload = function () {
     }
 
     // 로컬 스토리지 가중치 데이터 복원
-    const savedWeights = localStorage.getItem("weights");
+    const savedWeights = readStoredJSON("weights", null);
     if (savedWeights) {
-        loadSavedWeights(JSON.parse(savedWeights));
+        loadSavedWeights(savedWeights);
     }
 
     // 초기 언어 적용
     changeLanguage(currentLang);
+
+    // 현재 주소창 해시에 맞는 화면 표시 (새로고침/북마크 대응)
+    applyRoute();
 };
 
 // 기본 항목 삭제 함수 (최소 1개 유지)
@@ -301,8 +327,7 @@ function removeBuiltinCriteria(id) {
     localStorage.setItem("removedBuiltinIds", JSON.stringify(removedBuiltinIds));
 
     // 폼과 가중치 저장 갱신
-    const savedWeights = localStorage.getItem("weights");
-    let weights = savedWeights ? JSON.parse(savedWeights) : {};
+    let weights = readStoredJSON("weights", {});
     delete weights[id];
     localStorage.setItem("weights", JSON.stringify(weights));
 
@@ -392,8 +417,8 @@ function addCustomAttribute() {
     renderCustomAttrForms();
 
     // 저장된 가중치 복원
-    const savedWeights = localStorage.getItem("weights");
-    if (savedWeights) loadSavedWeights(JSON.parse(savedWeights));
+    const savedWeights = readStoredJSON("weights", null);
+    if (savedWeights) loadSavedWeights(savedWeights);
 }
 
 // 커스텀 항목 삭제 함수
@@ -403,8 +428,8 @@ function removeCustomAttribute(id) {
     renderCustomAttrList();
     renderCustomAttrForms();
 
-    const savedWeights = localStorage.getItem("weights");
-    if (savedWeights) loadSavedWeights(JSON.parse(savedWeights));
+    const savedWeights = readStoredJSON("weights", null);
+    if (savedWeights) loadSavedWeights(savedWeights);
 }
 
 // 커스텀 항목 목록 UI 렌더링
@@ -420,7 +445,7 @@ function renderCustomAttrList() {
         const item = document.createElement("div");
         item.className = "custom-attr-item";
         item.innerHTML = `
-            <span>${c.label} <small style="color:#999;">(${typeLabel})</small></span>
+            <span>${escapeHtml(c.label)} <small style="color:#999;">(${typeLabel})</small></span>
             <button class="remove-attr-btn" onclick="removeCustomAttribute('${c.id}')">✕</button>`;
         listEl.appendChild(item);
     });
@@ -508,26 +533,24 @@ function changeLanguage(lang) {
 
 // 단계 이동 함수
 function startApp() {
-    document.getElementById("title-section").style.display = "none";
-    document.getElementById("app-header").style.display = "block";
-
     const step1 = document.getElementById("step1-section");
     const step2 = document.getElementById("step2-section");
-    const savedWeights = localStorage.getItem("weights");
+    const savedWeights = readStoredJSON("weights", null);
     const firstVisit = !hasVisitedApp;
     hasVisitedApp = true;
 
-    step1.style.display = "block";
-    step2.style.display = "block";
-
-    if (savedWeights) loadSavedWeights(JSON.parse(savedWeights));
+    if (savedWeights) loadSavedWeights(savedWeights);
 
     preferenceOpen = firstVisit;
     propertyOpen = false;
     step1.classList.toggle("is-collapsed", !preferenceOpen);
     step2.classList.add("is-collapsed");
-
     changePreferenceToggleLabel();
+
+    // 별개 페이지로 이동한 것처럼 주소창 해시를 변경 (뒤로가기로 타이틀 화면 복귀 가능)
+    // hashchange 이벤트는 비동기로 발생하므로, 화면 전환은 즉시 직접 적용한다.
+    location.hash = APP_ROUTE;
+    applyRoute();
     step1.scrollIntoView({ behavior: "smooth" });
 }
 
@@ -614,11 +637,10 @@ function editProperty(id) {
     editingId = id;
 
     // Show the score input step even when editing from the ranking on the title screen.
-    document.getElementById("title-section").style.display = "none";
-    document.getElementById("app-header").style.display = "block";
+    location.hash = APP_ROUTE;
+    applyRoute();
     document.getElementById("step1-section").classList.add("is-collapsed");
     preferenceOpen = false;
-    document.getElementById("step2-section").style.display = "block";
     document.getElementById("step2-section").classList.remove("is-collapsed");
     propertyOpen = true;
     changePreferenceToggleLabel();
@@ -740,10 +762,8 @@ function analyzeProperty() {
     updateRankingTable();
 
     if (wasEditing) {
-        document.getElementById("title-section").style.display = "block";
-        document.getElementById("app-header").style.display = "none";
-        document.getElementById("step1-section").style.display = "none";
-        document.getElementById("step2-section").style.display = "none";
+        location.hash = "";
+        applyRoute();
         document.getElementById("title-section").scrollIntoView({ behavior: "smooth" });
     }
 
@@ -754,22 +774,20 @@ function updateRankingTable() {
     const body = document.getElementById("ranking-body");
     if (!body) return;
     
-    body.innerHTML = "";
-
-    propertyList.forEach((prop, index) => {
+    body.innerHTML = propertyList.map((prop, index) => {
         const rankStr = translations[currentLang].rankFormat(index + 1);
         const scoreStr = translations[currentLang].scoreFormat(prop.score);
-        body.innerHTML += `
+        return `
             <tr>
                 <td>${rankStr}</td>
-                <td><b>${prop.name}</b></td>
+                <td><b>${escapeHtml(prop.name)}</b></td>
                 <td><span class="score-tag">${scoreStr}</span></td>
                 <td>
                     <button class="ranking-btn edit-btn" onclick="editProperty('${prop.id}')">${translations[currentLang].editBtn}</button>
                     <button class="ranking-btn delete-btn" onclick="deleteProperty('${prop.id}')">${translations[currentLang].deleteBtn}</button>
                 </td>
             </tr>`;
-    });
+    }).join("");
 
     const isUnlocked = localStorage.getItem("isUnlocked") === "true";
     const unlockBanner = document.getElementById("unlock-banner");
