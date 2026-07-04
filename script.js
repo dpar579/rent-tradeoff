@@ -1,17 +1,3 @@
-// 평가 기준 정의 (Garage만 Y/N형, 나머지는 1~5 점수형) — let으로 선언해 런타임 삭제 허용
-let criteria = [
-    { id: "commute", label: "Commute time" },
-    { id: "price", label: "Price" },
-    { id: "age", label: "Age" },
-    { id: "infra", label: "Dist. to Infra." },
-    { id: "water", label: "Water Bill" },
-    { id: "gas_elec", label: "Gas/Elec. Bill" },
-    { id: "floor_mat", label: "Floor material" },
-    { id: "garage", label: "Garage (O/X)", type: "binary" },
-    { id: "stairs", label: "Floor height / Stairs" },
-    { id: "security", label: "Security" }
-];
-// 원본 목록 (복원 기준)
 const DEFAULT_CRITERIA = [
     { id: "commute", label: "Commute time" },
     { id: "price", label: "Price" },
@@ -24,6 +10,7 @@ const DEFAULT_CRITERIA = [
     { id: "stairs", label: "Floor height / Stairs" },
     { id: "security", label: "Security" }
 ];
+let criteria = DEFAULT_CRITERIA.slice();
 
 let propertyList = [];
 let currentLang = "ko";
@@ -31,6 +18,67 @@ let editingId = null;
 let customCriteria = []; // 사용자 추가 항목
 let removedBuiltinIds = []; // 삭제된 기본 항목 ID 목록
 const MAX_CRITERIA = 15;  // 기본 항목 + 커스텀 합산 최대 15개
+
+function criterionLabel(lang, c) {
+    return translations[lang].criteria[c.id] || c.label;
+}
+
+function clearActiveButtons(container) {
+    if (!container) return;
+    for (let btn of container.getElementsByClassName("w-btn")) btn.classList.remove("w-active");
+}
+
+function setActiveButton(container, value, binary) {
+    clearActiveButtons(container);
+    const buttons = container ? container.getElementsByClassName("w-btn") : [];
+    if (!buttons.length) return;
+    const index = binary ? (value === 5 ? 0 : 1) : value - 1;
+    if (buttons[index]) buttons[index].classList.add("w-active");
+}
+
+function criterionRowHtml(c, lang, custom = false) {
+    const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`; 
+    return `
+        <button type="button" class="remove-inline-btn" ${remove} title="Remove">✕</button>
+        <label id="w-label-${c.id}">${custom ? c.label : criterionLabel(lang, c)}</label>
+        <div class="weight-buttons" id="w-container-${c.id}">
+            <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 1)">1</button>
+            <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 2)">2</button>
+            <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 3)">3</button>
+            <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 4)">4</button>
+            <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 5)">5</button>
+        </div>
+        <input type="hidden" id="w-${c.id}" value="">
+        `;
+}
+
+function propertyRowHtml(c, lang, custom = false) {
+    const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`; 
+    const label = custom ? c.label : criterionLabel(lang, c);
+    return `
+        <button type="button" class="remove-inline-btn" ${remove} title="Remove">✕</button>
+        <label id="p-label-${c.id}">${label}${c.type === "binary" ? "" : translations[lang].scoreLabelSuffix}</label>
+        <div class="weight-buttons" id="p-container-${c.id}">
+            ${c.type === "binary"
+                ? `<button type="button" class="w-btn" id="p-btn-yes-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 5)">${translations[lang].yesText}</button>
+                   <button type="button" class="w-btn" id="p-btn-no-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 1)">${translations[lang].noText}</button>`
+                : `<button type="button" class="w-btn" onclick="selectScore('${c.id}', 1)">1</button>
+                   <button type="button" class="w-btn" onclick="selectScore('${c.id}', 2)">2</button>
+                   <button type="button" class="w-btn" onclick="selectScore('${c.id}', 3)">3</button>
+                   <button type="button" class="w-btn" onclick="selectScore('${c.id}', 4)">4</button>
+                   <button type="button" class="w-btn" onclick="selectScore('${c.id}', 5)">5</button>`}
+        </div>
+        <input type="hidden" id="p-${c.id}" value="">
+    `;
+}
+
+function clearScoreFields(items) {
+    items.forEach(c => {
+        const el = document.getElementById(`p-${c.id}`);
+        if (el) el.value = "";
+        clearActiveButtons(document.getElementById(`p-container-${c.id}`));
+    });
+}
 
 // 다국어 번역 사전
 const translations = {
@@ -270,54 +318,18 @@ function renderForms() {
 
     const lang = currentLang;
 
-    // 기본 criteria 렌더링 (왼쪽 × 버튼 포함)
     criteria.forEach(c => {
-        const labelText = translations[lang].criteria[c.id] || c.label;
-        // 가중치 폼 행
         const wDiv = document.createElement("div");
         wDiv.className = "input-inline";
-        wDiv.innerHTML = `
-            <button type="button" class="remove-inline-btn" onclick="removeBuiltinCriteria('${c.id}')" title="Remove">✕</button>
-            <label id="w-label-${c.id}">${labelText}</label>
-            <div class="weight-buttons" id="w-container-${c.id}">
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 1)">1</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 2)">2</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 3)">3</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 4)">4</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 5)">5</button>
-            </div>
-            <input type="hidden" id="w-${c.id}" value="">`;
+        wDiv.innerHTML = criterionRowHtml(c, lang);
         weightForm.appendChild(wDiv);
 
-        // 점수 폼 행
         const pDiv = document.createElement("div");
         pDiv.className = "input-inline";
-        if (c.type === "binary") {
-            pDiv.innerHTML = `
-                <button type="button" class="remove-inline-btn" onclick="removeBuiltinCriteria('${c.id}')" title="Remove">✕</button>
-                <label id="p-label-${c.id}">${labelText}</label>
-                <div class="weight-buttons" id="p-container-${c.id}">
-                    <button type="button" class="w-btn" id="p-btn-yes-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 5)">${translations[lang].yesText}</button>
-                    <button type="button" class="w-btn" id="p-btn-no-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 1)">${translations[lang].noText}</button>
-                </div>
-                <input type="hidden" id="p-${c.id}" value="">`;
-        } else {
-            pDiv.innerHTML = `
-                <button type="button" class="remove-inline-btn" onclick="removeBuiltinCriteria('${c.id}')" title="Remove">✕</button>
-                <label id="p-label-${c.id}">${labelText}${translations[lang].scoreLabelSuffix}</label>
-                <div class="weight-buttons" id="p-container-${c.id}">
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 1)">1</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 2)">2</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 3)">3</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 4)">4</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 5)">5</button>
-                </div>
-                <input type="hidden" id="p-${c.id}" value="">`;
-        }
+        pDiv.innerHTML = propertyRowHtml(c, lang);
         propForm.appendChild(pDiv);
     });
 
-    // 커스텀 criteria 폼 렌더링
     renderCustomAttrForms();
 }
 
@@ -327,52 +339,18 @@ function renderCustomAttrForms() {
     const weightForm = document.getElementById("weighting-form");
     const lang = currentLang;
 
-    // 기존 커스텀 항목 요소 제거 후 재렌더링
     propForm.querySelectorAll(".custom-form-row").forEach(el => el.remove());
     weightForm.querySelectorAll(".custom-form-row").forEach(el => el.remove());
 
     customCriteria.forEach(c => {
-        // 가중치 폼 — 왼쪽 × 버튼
         const wDiv = document.createElement("div");
         wDiv.className = "input-inline custom-form-row";
-        wDiv.innerHTML = `
-            <button type="button" class="remove-inline-btn" onclick="removeCustomAttribute('${c.id}')" title="Remove">✕</button>
-            <label id="w-label-${c.id}">${c.label}</label>
-            <div class="weight-buttons" id="w-container-${c.id}">
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 1)">1</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 2)">2</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 3)">3</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 4)">4</button>
-                <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 5)">5</button>
-            </div>
-            <input type="hidden" id="w-${c.id}" value="">`;
+        wDiv.innerHTML = criterionRowHtml(c, lang, true);
         weightForm.appendChild(wDiv);
 
-        // 점수 폼 — 왼쪽 × 버튼
         const pDiv = document.createElement("div");
         pDiv.className = "input-inline custom-form-row";
-        if (c.type === "binary") {
-            pDiv.innerHTML = `
-                <button type="button" class="remove-inline-btn" onclick="removeCustomAttribute('${c.id}')" title="Remove">✕</button>
-                <label id="p-label-${c.id}">${c.label}</label>
-                <div class="weight-buttons" id="p-container-${c.id}">
-                    <button type="button" class="w-btn" id="p-btn-yes-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 5)">${translations[lang].yesText}</button>
-                    <button type="button" class="w-btn" id="p-btn-no-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 1)">${translations[lang].noText}</button>
-                </div>
-                <input type="hidden" id="p-${c.id}" value="">`;
-        } else {
-            pDiv.innerHTML = `
-                <button type="button" class="remove-inline-btn" onclick="removeCustomAttribute('${c.id}')" title="Remove">✕</button>
-                <label id="p-label-${c.id}">${c.label}${translations[lang].scoreLabelSuffix}</label>
-                <div class="weight-buttons" id="p-container-${c.id}">
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 1)">1</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 2)">2</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 3)">3</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 4)">4</button>
-                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 5)">5</button>
-                </div>
-                <input type="hidden" id="p-${c.id}" value="">`;
-        }
+        pDiv.innerHTML = propertyRowHtml(c, lang, true);
         propForm.appendChild(pDiv);
     });
 }
@@ -501,39 +479,18 @@ function changeLanguage(lang) {
     if (addAttrBtnEl) addAttrBtnEl.innerText = translations[lang].addAttrBtn;
 
     // 생성된 입력 폼 라벨 및 바이너리 버튼 다국어 즉시 업데이트 (기본 항목)
-    criteria.forEach(c => {
+    [...criteria, ...customCriteria].forEach(c => {
+        const baseLabel = criteria.some(x => x.id === c.id) ? criterionLabel(lang, c) : c.label;
+        const pLabel = document.getElementById(`p-label-${c.id}`);
+        if (pLabel) pLabel.innerText = c.type === "binary" ? baseLabel : baseLabel + translations[lang].scoreLabelSuffix;
+        const btnYes = document.getElementById(`p-btn-yes-${c.id}`);
+        const btnNo = document.getElementById(`p-btn-no-${c.id}`);
+        if (btnYes && btnNo) {
+            btnYes.innerText = translations[lang].yesText;
+            btnNo.innerText = translations[lang].noText;
+        }
         const wLabel = document.getElementById(`w-label-${c.id}`);
-        if (wLabel) wLabel.innerText = translations[lang].criteria[c.id];
-
-        const pLabel = document.getElementById(`p-label-${c.id}`);
-        if (pLabel) {
-            pLabel.innerText = c.type === "binary"
-                ? translations[lang].criteria[c.id]
-                : translations[lang].criteria[c.id] + translations[lang].scoreLabelSuffix;
-        }
-
-        const btnYes = document.getElementById(`p-btn-yes-${c.id}`);
-        const btnNo = document.getElementById(`p-btn-no-${c.id}`);
-        if (btnYes && btnNo) {
-            btnYes.innerText = translations[lang].yesText;
-            btnNo.innerText = translations[lang].noText;
-        }
-    });
-
-    // 커스텀 항목 바이너리 버튼 번역 (커스텀 항목 Yes/No는 고정 다국어 반영)
-    customCriteria.forEach(c => {
-        const btnYes = document.getElementById(`p-btn-yes-${c.id}`);
-        const btnNo = document.getElementById(`p-btn-no-${c.id}`);
-        if (btnYes && btnNo) {
-            btnYes.innerText = translations[lang].yesText;
-            btnNo.innerText = translations[lang].noText;
-        }
-        const pLabel = document.getElementById(`p-label-${c.id}`);
-        if (pLabel) {
-            pLabel.innerText = c.type === "binary"
-                ? c.label
-                : c.label + translations[lang].scoreLabelSuffix;
-        }
+        if (wLabel) wLabel.innerText = baseLabel;
     });
 
     // 커스텀 항목 목록 업데이트 (언어에 따른 타입명 갱신)
@@ -564,10 +521,7 @@ function goToStep2() {
     const weights = {};
     for (let c of criteria) {
         const val = document.getElementById(`w-${c.id}`).value;
-        if (!val) {
-            alert(translations[currentLang].alertSelectWeight(translations[currentLang].criteria[c.id]));
-            return;
-        }
+        if (!val) return alert(translations[currentLang].alertSelectWeight(criterionLabel(currentLang, c)));
         weights[c.id] = Number(val);
     }
     
@@ -584,85 +538,27 @@ function goToStep1() {
 }
 
 function loadSavedWeights(weights) {
-    // 기본 criteria 가중치 복원
-    criteria.forEach(c => {
+    [...criteria, ...customCriteria].forEach(c => {
         const value = weights[c.id];
-        if (value) {
-            document.getElementById(`w-${c.id}`).value = value;
-
-            const container = document.getElementById(`w-container-${c.id}`);
-            if (container) {
-                const buttons = container.getElementsByClassName("w-btn");
-                for (let btn of buttons) btn.classList.remove("w-active");
-                if (buttons[value - 1]) buttons[value - 1].classList.add("w-active");
-            }
-        }
-    });
-    // 커스텀 criteria 가중치 복원
-    customCriteria.forEach(c => {
-        const value = weights[c.id];
-        if (value) {
-            const el = document.getElementById(`w-${c.id}`);
-            if (el) el.value = value;
-            const container = document.getElementById(`w-container-${c.id}`);
-            if (container) {
-                const buttons = container.getElementsByClassName("w-btn");
-                for (let btn of buttons) btn.classList.remove("w-active");
-                if (buttons[value - 1]) buttons[value - 1].classList.add("w-active");
-            }
-        }
+        if (!value) return;
+        const el = document.getElementById(`w-${c.id}`);
+        if (el) el.value = value;
+        setActiveButton(document.getElementById(`w-container-${c.id}`), value, false);
     });
 }
 
 function selectWeight(id, value) {
-    const container = document.getElementById(`w-container-${id}`);
-    const buttons = container.getElementsByClassName("w-btn");
-    
-    // 모든 버튼에서 active 클래스 제거
-    for (let btn of buttons) {
-        btn.classList.remove("w-active");
-    }
-    
-    // 선택한 버튼에 active 클래스 추가
-    buttons[value - 1].classList.add("w-active");
-    
-    // hidden input 값 업데이트
+    setActiveButton(document.getElementById(`w-container-${id}`), value, false);
     document.getElementById(`w-${id}`).value = value;
 }
 
 function selectScore(id, value) {
-    const container = document.getElementById(`p-container-${id}`);
-    const buttons = container.getElementsByClassName("w-btn");
-    
-    // 모든 버튼에서 active 클래스 제거
-    for (let btn of buttons) {
-        btn.classList.remove("w-active");
-    }
-    
-    // 선택한 버튼에 active 클래스 추가
-    buttons[value - 1].classList.add("w-active");
-    
-    // hidden input 값 업데이트
+    setActiveButton(document.getElementById(`p-container-${id}`), value, false);
     document.getElementById(`p-${id}`).value = value;
 }
 
 function selectScoreBinary(id, value) {
-    const container = document.getElementById(`p-container-${id}`);
-    const buttons = container.getElementsByClassName("w-btn");
-    
-    // 모든 버튼에서 active 클래스 제거
-    for (let btn of buttons) {
-        btn.classList.remove("w-active");
-    }
-    
-    // Yes(5점)는 첫 번째 버튼(index 0), No(1점)는 두 번째 버튼(index 1)
-    if (value === 5) {
-        buttons[0].classList.add("w-active");
-    } else {
-        buttons[1].classList.add("w-active");
-    }
-    
-    // hidden input 값 업데이트
+    setActiveButton(document.getElementById(`p-container-${id}`), value, true);
     document.getElementById(`p-${id}`).value = value;
 }
 
@@ -687,20 +583,8 @@ function editProperty(id) {
         const score = prop.scores && prop.scores[c.id] !== undefined ? prop.scores[c.id] : "";
         const el = document.getElementById(`p-${c.id}`);
         if (el) el.value = score;
-
-        const container = document.getElementById(`p-container-${c.id}`);
-        if (container) {
-            const buttons = container.getElementsByClassName("w-btn");
-            for (let btn of buttons) btn.classList.remove("w-active");
-            if (score !== "") {
-                if (c.type === "binary") {
-                    if (score === 5) buttons[0].classList.add("w-active");
-                    else if (score === 1) buttons[1].classList.add("w-active");
-                } else {
-                    if (buttons[score - 1]) buttons[score - 1].classList.add("w-active");
-                }
-            }
-        }
+        if (score !== "") setActiveButton(document.getElementById(`p-container-${c.id}`), score, c.type === "binary");
+        else clearActiveButtons(document.getElementById(`p-container-${c.id}`));
     });
 
     // 등록 버튼 텍스트를 "매물 수정 및 저장"으로 변경
@@ -721,16 +605,7 @@ function deleteProperty(id) {
         if (String(editingId) === String(id)) {
             editingId = null;
             document.getElementById("prop-name").value = "";
-            [...criteria, ...customCriteria].forEach(c => {
-                const el = document.getElementById(`p-${c.id}`);
-                if (el) el.value = "";
-                const container = document.getElementById(`p-container-${c.id}`);
-                if (container) {
-                    for (let btn of container.getElementsByClassName("w-btn")) {
-                        btn.classList.remove("w-active");
-                    }
-                }
-            });
+            clearScoreFields([...criteria, ...customCriteria]);
             document.getElementById("submit-btn").innerText = translations[currentLang].submitBtn;
         }
 
@@ -811,18 +686,8 @@ function analyzeProperty() {
     // 로컬 스토리지에 저장
     localStorage.setItem("propertyList", JSON.stringify(propertyList));
 
-    // 입력 데이터 초기화 (기본 + 커스텀)
     document.getElementById("prop-name").value = "";
-    [...criteria, ...customCriteria].forEach(c => {
-        const el = document.getElementById(`p-${c.id}`);
-        if (el) el.value = "";
-        const container = document.getElementById(`p-container-${c.id}`);
-        if (container) {
-            for (let btn of container.getElementsByClassName("w-btn")) {
-                btn.classList.remove("w-active");
-            }
-        }
-    });
+    clearScoreFields([...criteria, ...customCriteria]);
 
     updateRankingTable();
 
