@@ -12,6 +12,7 @@
     <div class="container">
         <!-- 언어 선택 바 (Language Selector) -->
         <div class="lang-selector">
+            <div class="site-brand">RentBest</div>
             <button class="lang-btn" id="lang-ko" onclick="changeLanguage('ko')">한국어</button>
             <button class="lang-btn" id="lang-en" onclick="changeLanguage('en')">English</button>
             <button class="lang-btn" id="lang-zh" onclick="changeLanguage('zh')">中文</button>
@@ -32,15 +33,21 @@
             </div>
         </div>
 
-        <div class="section" id="step1-section" style="display: none;">
-            <h2 id="step1-header">1. 나의 선호도 설정 (Weighting: 1~5)</h2>
+        <div class="section accordion-section" id="step1-section" style="display: none;">
+            <button type="button" class="accordion-toggle" id="step1-toggle" onclick="togglePreferenceSection()">
+                <span id="step1-header">1. 나의 선호도 설정 (Weighting: 1~5)</span>
+                <span class="accordion-caret" id="step1-caret">▾</span>
+            </button>
             <div id="weighting-form">
             </div>
             <button id="step1-next-btn" onclick="goToStep2()" style="margin-top: 15px;">Next</button>
         </div>
 
-        <div class="section" id="step2-section" style="display:none;">
-            <h2 id="step2-header">2. 매물 점수 입력 (Score: 1~5)</h2>
+        <div class="section accordion-section is-collapsed" id="step2-section" style="display:none;">
+            <button type="button" class="accordion-toggle" id="step2-toggle" onclick="togglePropertySection()">
+                <span id="step2-header">2. 매물 점수 입력 (Score: 1~5)</span>
+                <span class="accordion-caret" id="step2-caret">▾</span>
+            </button>
             <div class="input-group">
                 <label id="prop-name-label">매물 이름/닉네임</label>
                 <input type="text" id="prop-name" placeholder="예: 지역 이름">
@@ -65,7 +72,6 @@
             </div>
             <div class="button-group" style="display: flex; gap: 10px; margin-top: 15px;">
                 <button id="submit-btn" onclick="analyzeProperty()" style="flex: 1;">매물 평가 및 저장</button>
-                <button id="reset-btn" onclick="goToStep1()" style="background: #95a5a6; width: auto; white-space: nowrap; padding: 12px 20px;">선호도 재설정</button>
             </div>
         </div>
 

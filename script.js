@@ -18,6 +18,9 @@ let editingId = null;
 let customCriteria = []; // 사용자 추가 항목
 let removedBuiltinIds = []; // 삭제된 기본 항목 ID 목록
 const MAX_CRITERIA = 15;  // 기본 항목 + 커스텀 합산 최대 15개
+let preferenceOpen = false;
+let propertyOpen = false;
+let hasVisitedApp = false;
 
 function criterionLabel(lang, c) {
     return translations[lang].criteria[c.id] || c.label;
@@ -189,8 +192,8 @@ const translations = {
         }
     },
     zh: {
-        titleStress: "零压力",
-        titleChoice: "最佳选择",
+        titleStress: "Zero Stress",
+        titleChoice: "Best Choice",
         goBtn: "出发",
         unlockText: "想要更多选项？仅需 $4.99 即可解锁 30 天无限量房源。",
         unlockBtn: "立即解锁",
@@ -459,13 +462,14 @@ function changeLanguage(lang) {
     document.getElementById("submit-btn").innerText = editingId
         ? (translations[lang].submitUpdateBtn || translations[lang].submitBtn)
         : translations[lang].submitBtn;
-    document.getElementById("reset-btn").innerText = translations[lang].resetBtn;
     document.getElementById("result-header").innerText = translations[lang].resultHeader;
 
     document.getElementById("th-rank").innerText = translations[lang].thRank;
     document.getElementById("th-name").innerText = translations[lang].thName;
     document.getElementById("th-score").innerText = translations[lang].thScore;
     document.getElementById("th-action").innerText = translations[lang].thAction;
+    document.getElementById("step1-toggle").setAttribute("aria-expanded", String(preferenceOpen));
+    document.getElementById("step2-toggle").setAttribute("aria-expanded", String(propertyOpen));
 
     // 커스텀 항목 추가 UI 번역 업데이트
     const newAttrInput = document.getElementById("new-attr-name");
@@ -477,6 +481,8 @@ function changeLanguage(lang) {
     }
     const addAttrBtnEl = document.querySelector(".add-attr-btn");
     if (addAttrBtnEl) addAttrBtnEl.innerText = translations[lang].addAttrBtn;
+    const step2Caret = document.getElementById("step2-caret");
+    if (step2Caret) step2Caret.textContent = propertyOpen ? "▴" : "▾";
 
     // 생성된 입력 폼 라벨 및 바이너리 버튼 다국어 즉시 업데이트 (기본 항목)
     [...criteria, ...customCriteria].forEach(c => {
@@ -504,16 +510,50 @@ function changeLanguage(lang) {
 function startApp() {
     document.getElementById("title-section").style.display = "none";
     document.getElementById("app-header").style.display = "block";
-    
+
+    const step1 = document.getElementById("step1-section");
+    const step2 = document.getElementById("step2-section");
     const savedWeights = localStorage.getItem("weights");
-    if (savedWeights) {
-        // 이미 가중치가 설정되어 있다면 복원 후 바로 2단계로
-        loadSavedWeights(JSON.parse(savedWeights));
-        document.getElementById("step2-section").style.display = "block";
-    } else {
-        // 처음이면 1단계로
-        document.getElementById("step1-section").style.display = "block";
-    }
+    const firstVisit = !hasVisitedApp;
+    hasVisitedApp = true;
+
+    step1.style.display = "block";
+    step2.style.display = "block";
+
+    if (savedWeights) loadSavedWeights(JSON.parse(savedWeights));
+
+    preferenceOpen = firstVisit;
+    propertyOpen = false;
+    step1.classList.toggle("is-collapsed", !preferenceOpen);
+    step2.classList.add("is-collapsed");
+
+    changePreferenceToggleLabel();
+    step1.scrollIntoView({ behavior: "smooth" });
+}
+
+function changePreferenceToggleLabel() {
+    const header = document.getElementById("step1-header");
+    if (header) header.style.display = "inline";
+    const caret = document.getElementById("step1-caret");
+    if (caret) caret.textContent = preferenceOpen ? "▴" : "▾";
+}
+
+function togglePreferenceSection() {
+    const section = document.getElementById("step1-section");
+    if (!section) return;
+    preferenceOpen = !preferenceOpen;
+    section.classList.toggle("is-collapsed", !preferenceOpen);
+    if (section.style.display === "none") section.style.display = "block";
+    changePreferenceToggleLabel();
+}
+
+function togglePropertySection() {
+    const section = document.getElementById("step2-section");
+    if (!section) return;
+    propertyOpen = !propertyOpen;
+    section.classList.toggle("is-collapsed", !propertyOpen);
+    if (section.style.display === "none") section.style.display = "block";
+    changePreferenceToggleLabel();
 }
 
 function goToStep2() {
@@ -528,13 +568,17 @@ function goToStep2() {
     // 가중치를 로컬 스토리지에 저장
     localStorage.setItem("weights", JSON.stringify(weights));
 
-    document.getElementById("step1-section").style.display = "none";
+    document.getElementById("step1-section").classList.add("is-collapsed");
+    preferenceOpen = false;
     document.getElementById("step2-section").style.display = "block";
+    document.getElementById("step2-section").classList.remove("is-collapsed");
+    propertyOpen = true;
+    changePreferenceToggleLabel();
+    document.getElementById("step2-section").scrollIntoView({ behavior: "smooth" });
 }
 
 function goToStep1() {
-    document.getElementById("step1-section").style.display = "block";
-    document.getElementById("step2-section").style.display = "none";
+    togglePreferenceSection();
 }
 
 function loadSavedWeights(weights) {
@@ -572,8 +616,12 @@ function editProperty(id) {
     // Show the score input step even when editing from the ranking on the title screen.
     document.getElementById("title-section").style.display = "none";
     document.getElementById("app-header").style.display = "block";
-    document.getElementById("step1-section").style.display = "none";
+    document.getElementById("step1-section").classList.add("is-collapsed");
+    preferenceOpen = false;
     document.getElementById("step2-section").style.display = "block";
+    document.getElementById("step2-section").classList.remove("is-collapsed");
+    propertyOpen = true;
+    changePreferenceToggleLabel();
 
     // 매물 이름 입력 필드에 대입
     document.getElementById("prop-name").value = prop.name;

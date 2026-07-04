@@ -30,6 +30,47 @@ h2 {
     border-bottom: 1px solid #eee;
 }
 
+.accordion-section {
+    padding-top: 10px;
+}
+
+.accordion-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    color: #2c3e50;
+    padding: 0;
+    border-radius: 0;
+    font-size: 18px;
+    font-weight: 800;
+    text-align: left;
+}
+
+.accordion-toggle:hover {
+    background: transparent;
+}
+
+.accordion-caret {
+    width: auto;
+    padding: 0 6px;
+    color: #7f8c8d;
+    transition: transform 0.2s ease;
+}
+
+.accordion-section.is-collapsed .accordion-caret {
+    transform: rotate(-90deg);
+}
+
+.accordion-section.is-collapsed #weighting-form,
+.accordion-section.is-collapsed #step1-next-btn,
+.accordion-section.is-collapsed .input-group,
+.accordion-section.is-collapsed #property-form,
+.accordion-section.is-collapsed .add-attr-section,
+.accordion-section.is-collapsed .button-group {
+    display: none;
+}
+
 .input-group {
     margin-bottom: 15px;
 }
@@ -273,7 +314,8 @@ th {
 /* Language Selection Bar Styles */
 .lang-selector {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     gap: 6px;
     position: sticky;
     top: 0;
@@ -282,6 +324,18 @@ th {
     padding: 10px 0 8px;
     margin-bottom: 12px;
     border-bottom: 1px solid #f0f0f0;
+}
+
+.site-brand {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #2c3e50;
+    letter-spacing: 0;
+    line-height: 1;
+    white-space: nowrap;
+    margin-right: auto;
+    padding-right: 10px;
 }
 
 .lang-selector .lang-btn {
