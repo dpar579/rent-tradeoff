@@ -20,11 +20,154 @@ let removedBuiltinIds = []; // 삭제된 기본 항목 ID 목록
 const MAX_CRITERIA = 15;  // 기본 항목 + 커스텀 합산 최대 15개
 let preferenceOpen = false;
 let propertyOpen = false;
-let hasVisitedApp = false;
 const APP_ROUTE = "#/app";
 
-// 현재 URL 해시에 맞춰 타이틀 화면 / 앱 화면을 전환 (뒤로/앞으로가기 버튼 대응)
+// ===== Supabase 연동 (회원가입/로그인 + 데이터 저장) =====
+// TODO: 아래 SUPABASE_URL을 본인 프로젝트의 Project URL로 바꿔주세요.
+// (Supabase 대시보드 > Project Settings > API > Project URL, 형식: https://xxxxxxxx.supabase.co)
+const SUPABASE_URL = "https://znzdzykirhrhlnmdxaxs.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_OBtMj9fN0ZM_bs2nQ4rLPg_vljxzu--";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+let currentUser = null;      // { id, email, username }
+let currentWeights = {};     // 현재 로그인한 사용자의 선호도 가중치
+let isUnlocked = false;      // 현재 로그인한 사용자의 무제한 등록 잠금 해제 여부
+let authMode = "login";      // "login" | "signup"
+
+// 로그인/회원가입 탭 전환
+function switchAuthMode(mode) {
+    authMode = mode;
+    document.getElementById("auth-tab-login").classList.toggle("active", mode === "login");
+    document.getElementById("auth-tab-signup").classList.toggle("active", mode === "signup");
+    document.getElementById("auth-username-group").style.display = mode === "signup" ? "block" : "none";
+    document.getElementById("auth-submit-btn").innerText = mode === "signup"
+        ? translations[currentLang].signupBtn
+        : translations[currentLang].loginBtn;
+    hideAuthMessage();
+}
+
+function showAuthMessage(msg) {
+    const el = document.getElementById("auth-error");
+    el.textContent = msg;
+    el.style.display = "block";
+}
+
+function hideAuthMessage() {
+    const el = document.getElementById("auth-error");
+    el.style.display = "none";
+}
+
+// 회원가입 / 로그인 제출 처리
+async function handleAuthSubmit() {
+    hideAuthMessage();
+    const t = translations[currentLang];
+    const email = document.getElementById("auth-email").value.trim();
+    const password = document.getElementById("auth-password").value;
+    const username = document.getElementById("auth-username").value.trim();
+
+    if (!email || !password) {
+        showAuthMessage(t.authMissingFields);
+        return;
+    }
+
+    const btn = document.getElementById("auth-submit-btn");
+    btn.disabled = true;
+
+    try {
+        if (authMode === "signup") {
+            if (!username) {
+                showAuthMessage(t.authMissingUsername);
+                return;
+            }
+            const { data, error } = await sb.auth.signUp({
+                email,
+                password,
+                options: { data: { username } }
+            });
+            if (error) throw error;
+
+            if (data.session) {
+                await onSignedIn(data.session.user);
+            } else {
+                // "Confirm email" 설정이 켜져 있으면 세션이 바로 생기지 않는다.
+                showAuthMessage(t.authCheckEmail);
+            }
+        } else {
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            await onSignedIn(data.user);
+        }
+    } catch (err) {
+        showAuthMessage(err && err.message ? err.message : String(err));
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// 로그인 성공 후 처리: 사용자 정보 확정 + DB에서 데이터 로드 + 화면 전환
+async function onSignedIn(user) {
+    currentUser = {
+        id: user.id,
+        email: user.email,
+        username: (user.user_metadata && user.user_metadata.username) || null
+    };
+
+    if (!currentUser.username) {
+        const { data } = await sb.from("profiles").select("username").eq("id", user.id).maybeSingle();
+        if (data) currentUser.username = data.username;
+    }
+
+    await loadAllUserDataFromSupabase();
+    renderForms();
+    renderCustomAttrList();
+    showSignedInChrome();
+    location.hash = "";
+    applyRoute();
+}
+
+async function signOutUser() {
+    await sb.auth.signOut();
+    currentUser = null;
+    currentWeights = {};
+    isUnlocked = false;
+    removedBuiltinIds = [];
+    customCriteria = [];
+    criteria = DEFAULT_CRITERIA.slice();
+    propertyList = [];
+    editingId = null;
+
+    renderForms();
+    renderCustomAttrList();
+    const bar = document.getElementById("user-bar");
+    if (bar) bar.style.display = "none";
+
+    location.hash = "";
+    applyRoute();
+}
+
+function showSignedInChrome() {
+    const bar = document.getElementById("user-bar");
+    if (bar) bar.style.display = "flex";
+    updateGreeting();
+}
+
+function updateGreeting() {
+    const el = document.getElementById("user-greeting");
+    if (el && currentUser) el.textContent = translations[currentLang].greeting(currentUser.username || currentUser.email);
+}
+
+// 현재 URL 해시 + 로그인 상태에 맞춰 화면 전환 (뒤로/앞으로가기 버튼 대응)
 function applyRoute() {
+    if (!currentUser) {
+        document.getElementById("login-section").style.display = "block";
+        document.getElementById("title-section").style.display = "none";
+        document.getElementById("app-header").style.display = "none";
+        document.getElementById("step1-section").style.display = "none";
+        document.getElementById("step2-section").style.display = "none";
+        return;
+    }
+
+    document.getElementById("login-section").style.display = "none";
     const isAppView = location.hash === APP_ROUTE;
     document.getElementById("title-section").style.display = isAppView ? "none" : "block";
     document.getElementById("app-header").style.display = isAppView ? "block" : "none";
@@ -36,6 +179,15 @@ window.addEventListener("hashchange", applyRoute);
 
 function criterionLabel(lang, c) {
     return translations[lang].criteria[c.id] || c.label;
+}
+
+// 사용자 추가 항목의 라벨은 언어별 번역본을 담은 객체({ko, en, zh})로 저장된다.
+// 아직 번역되지 않았거나 예전 버전(문자열)으로 저장된 데이터도 안전하게 처리한다.
+function customLabel(c, lang) {
+    if (c.label && typeof c.label === "object") {
+        return c.label[lang] || c.label.en || c.label.ko || c.label.zh || "";
+    }
+    return c.label || "";
 }
 
 function escapeHtml(str) {
@@ -71,7 +223,7 @@ function criterionRowHtml(c, lang, custom = false) {
     const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`;
     return `
         <button type="button" class="remove-inline-btn" ${remove} title="Remove">✕</button>
-        <label id="w-label-${c.id}">${custom ? escapeHtml(c.label) : criterionLabel(lang, c)}</label>
+        <label id="w-label-${c.id}">${custom ? escapeHtml(customLabel(c, lang)) : criterionLabel(lang, c)}</label>
         <div class="weight-buttons" id="w-container-${c.id}">
             <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 1)">1</button>
             <button type="button" class="w-btn" onclick="selectWeight('${c.id}', 2)">2</button>
@@ -84,16 +236,14 @@ function criterionRowHtml(c, lang, custom = false) {
 }
 
 function propertyRowHtml(c, lang, custom = false) {
-    const remove = custom ? `onclick="removeCustomAttribute('${c.id}')"` : `onclick="removeBuiltinCriteria('${c.id}')"`;
-    const label = custom ? escapeHtml(c.label) : criterionLabel(lang, c);
+    const label = custom ? escapeHtml(customLabel(c, lang)) : criterionLabel(lang, c);
     return `
-        <button type="button" class="remove-inline-btn" ${remove} title="Remove">✕</button>
         <label id="p-label-${c.id}">${label}${c.type === "binary" ? "" : translations[lang].scoreLabelSuffix}</label>
         <div class="weight-buttons" id="p-container-${c.id}">
             ${c.type === "binary"
-                ? `<button type="button" class="w-btn" id="p-btn-yes-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 5)">${translations[lang].yesText}</button>
+            ? `<button type="button" class="w-btn" id="p-btn-yes-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 5)">${translations[lang].yesText}</button>
                    <button type="button" class="w-btn" id="p-btn-no-${c.id}" style="width: 55px !important;" onclick="selectScoreBinary('${c.id}', 1)">${translations[lang].noText}</button>`
-                : `<button type="button" class="w-btn" onclick="selectScore('${c.id}', 1)">1</button>
+            : `<button type="button" class="w-btn" onclick="selectScore('${c.id}', 1)">1</button>
                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 2)">2</button>
                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 3)">3</button>
                    <button type="button" class="w-btn" onclick="selectScore('${c.id}', 4)">4</button>
@@ -153,6 +303,23 @@ const translations = {
         alertSelectScore: (label) => `매물 점수 입력에서 [${label}] 점수를 선택해 주세요.`,
         alertMoreOptions: "더 많은 옵션이 필요하신가요? 단 $4.99로 30일간 매물을 무제한 등록하세요.",
         alertPaymentSuccess: "결제가 완료되었습니다! 30일 동안 매물 무제한 등록 기능이 해제되었습니다.",
+        loginTag: "로그인하면 비교 결과가 저장되고, 다음에도 이어서 사용할 수 있어요.",
+        loginNote: "회원님의 데이터는 Supabase에 안전하게 저장됩니다.",
+        signOutBtn: "로그아웃",
+        greeting: (name) => `${name}님, 안녕하세요`,
+        loginBtn: "로그인",
+        signupBtn: "회원가입",
+        usernameLabel: "닉네임",
+        usernamePlaceholder: "예: 자취왕",
+        emailLabel: "이메일",
+        emailPlaceholder: "you@example.com",
+        passwordLabel: "비밀번호",
+        passwordPlaceholder: "••••••••",
+        authMissingFields: "이메일과 비밀번호를 입력해 주세요.",
+        authMissingUsername: "닉네임을 입력해 주세요.",
+        authCheckEmail: "가입 확인 메일을 보냈어요. 메일함을 확인한 후 로그인해 주세요.",
+        adLabel: "광고",
+        adPlaceholder: "이 자리에 광고가 표시됩니다",
         criteria: {
             commute: "통근 시간",
             price: "가격",
@@ -206,6 +373,23 @@ const translations = {
         alertSelectScore: (label) => `Please select a score for [${label}] in Property Score Input.`,
         alertMoreOptions: "More options? Unlock unlimited listings for 30 days for just $4.99",
         alertPaymentSuccess: "Payment successful! Unlimited listings unlocked for 30 days.",
+        loginTag: "Sign in to save your comparisons and pick up right where you left off.",
+        loginNote: "Your data is securely stored with Supabase.",
+        signOutBtn: "Sign out",
+        greeting: (name) => `Hi, ${name}`,
+        loginBtn: "Log in",
+        signupBtn: "Sign up",
+        usernameLabel: "Username",
+        usernamePlaceholder: "e.g. renter123",
+        emailLabel: "Email",
+        emailPlaceholder: "you@example.com",
+        passwordLabel: "Password",
+        passwordPlaceholder: "••••••••",
+        authMissingFields: "Please enter your email and password.",
+        authMissingUsername: "Please enter a username.",
+        authCheckEmail: "Check your email to confirm your account, then log in.",
+        adLabel: "Advertisement",
+        adPlaceholder: "Your ad could appear here",
         criteria: {
             commute: "Commute time",
             price: "Price",
@@ -259,6 +443,23 @@ const translations = {
         alertSelectScore: (label) => `请在房源评分输入中为 [${label}] 选择评分。`,
         alertMoreOptions: "想要更多选项？仅需 $4.99 即可解锁 30 天无限量房源。",
         alertPaymentSuccess: "支付成功！30天内无限房源已解锁。",
+        loginTag: "登录后可保存对比结果，下次继续使用。",
+        loginNote: "您的数据将安全地保存在 Supabase 中。",
+        signOutBtn: "退出登录",
+        greeting: (name) => `你好，${name}`,
+        loginBtn: "登录",
+        signupBtn: "注册",
+        usernameLabel: "昵称",
+        usernamePlaceholder: "例如：租房达人",
+        emailLabel: "邮箱",
+        emailPlaceholder: "you@example.com",
+        passwordLabel: "密码",
+        passwordPlaceholder: "••••••••",
+        authMissingFields: "请输入邮箱和密码。",
+        authMissingUsername: "请输入昵称。",
+        authCheckEmail: "确认邮件已发送，请查收后再登录。",
+        adLabel: "广告",
+        adPlaceholder: "此处可展示广告",
         criteria: {
             commute: "通勤时间",
             price: "价格",
@@ -275,48 +476,92 @@ const translations = {
 };
 
 // 초기 UI 생성
-window.onload = function () {
-    // 저장된 언어 불러오기 (기본값: 영어)
+window.onload = async function () {
+    // 저장된 언어 불러오기 (기본값: 영어) — 언어는 기기 설정으로 취급, 사용자별로 나누지 않음
     currentLang = localStorage.getItem("selectedLang") || "en";
 
-    // 삭제된 기본 항목 복원
-    removedBuiltinIds = readStoredJSON("removedBuiltinIds", []);
-    if (removedBuiltinIds.length) {
-        criteria = DEFAULT_CRITERIA.filter(c => !removedBuiltinIds.includes(c.id));
-    }
-
-    // 저장된 커스텀 항목 복원
-    customCriteria = readStoredJSON("customCriteria", []);
-
-    // 언어에 맞게 입력 UI 생성
+    // 기본 폼(로그인 전 상태) 먼저 렌더링
     renderForms();
     renderCustomAttrList();
 
-    // 로컬 스토리지 데이터 복원
-    propertyList = readStoredJSON("propertyList", []);
-    if (propertyList.length) {
-        propertyList.forEach(prop => {
-            if (!prop.id) prop.id = Date.now() + Math.random();
-            if (!prop.scores) prop.scores = {};
-        });
-        updateRankingTable();
-    }
-
-    // 로컬 스토리지 가중치 데이터 복원
-    const savedWeights = readStoredJSON("weights", null);
-    if (savedWeights) {
-        loadSavedWeights(savedWeights);
+    // Supabase 세션 복원 (이미 로그인돼 있으면 자동으로 앱 화면까지 진입)
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+        await onSignedIn(session.user);
     }
 
     // 초기 언어 적용
     changeLanguage(currentLang);
 
-    // 현재 주소창 해시에 맞는 화면 표시 (새로고침/북마크 대응)
+    // 현재 주소창 해시 + 로그인 상태에 맞는 화면 표시 (새로고침/북마크 대응)
     applyRoute();
 };
 
+// Supabase 세션이 만료되거나 다른 탭에서 로그아웃한 경우 등을 감지
+sb.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT" && currentUser) {
+        signOutUser();
+    }
+});
+
+// 로그인한 사용자의 저장 데이터(선호도, 커스텀 항목, 매물 목록)를 Supabase에서 불러오기
+async function loadAllUserDataFromSupabase() {
+    const { data: prefRow, error: prefError } = await sb
+        .from("preferences")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+    if (prefError) console.error("preferences load error:", prefError);
+
+    if (prefRow) {
+        removedBuiltinIds = prefRow.removed_builtin_ids || [];
+        customCriteria = prefRow.custom_criteria || [];
+        currentWeights = prefRow.weights || {};
+        isUnlocked = !!prefRow.is_unlocked;
+    } else {
+        removedBuiltinIds = [];
+        customCriteria = [];
+        currentWeights = {};
+        isUnlocked = false;
+        // 최초 로그인이라면 preferences 행을 미리 만들어 둔다.
+        const { error: insertError } = await sb.from("preferences").insert({ user_id: currentUser.id });
+        if (insertError) console.error("preferences init error:", insertError);
+    }
+
+    criteria = removedBuiltinIds.length
+        ? DEFAULT_CRITERIA.filter(c => !removedBuiltinIds.includes(c.id))
+        : DEFAULT_CRITERIA.slice();
+
+    const { data: props, error: propsError } = await sb
+        .from("properties")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .order("score", { ascending: false });
+
+    if (propsError) console.error("properties load error:", propsError);
+
+    propertyList = (props || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        scores: p.scores || {},
+        score: Number(p.score)
+    }));
+
+    updateRankingTable();
+    if (Object.keys(currentWeights).length) loadSavedWeights(currentWeights);
+}
+
+// preferences 행을 부분 갱신 (upsert)
+async function savePreferences(partial) {
+    if (!currentUser) return;
+    const payload = { user_id: currentUser.id, ...partial };
+    const { error } = await sb.from("preferences").upsert(payload, { onConflict: "user_id" });
+    if (error) console.error("savePreferences error:", error);
+}
+
 // 기본 항목 삭제 함수 (최소 1개 유지)
-function removeBuiltinCriteria(id) {
+async function removeBuiltinCriteria(id) {
     const total = criteria.length + customCriteria.length;
     if (total <= 1) {
         alert(translations[currentLang].minCriteriaAlert);
@@ -324,16 +569,14 @@ function removeBuiltinCriteria(id) {
     }
     criteria = criteria.filter(c => c.id !== id);
     removedBuiltinIds.push(id);
-    localStorage.setItem("removedBuiltinIds", JSON.stringify(removedBuiltinIds));
 
-    // 폼과 가중치 저장 갱신
-    let weights = readStoredJSON("weights", {});
-    delete weights[id];
-    localStorage.setItem("weights", JSON.stringify(weights));
+    delete currentWeights[id];
+
+    await savePreferences({ removed_builtin_ids: removedBuiltinIds, weights: currentWeights });
 
     renderForms();
     renderCustomAttrList();
-    loadSavedWeights(weights);
+    loadSavedWeights(currentWeights);
 }
 
 // 가중치 및 점수 입력 폼 동적 렌더링
@@ -384,7 +627,7 @@ function renderCustomAttrForms() {
 }
 
 // 커스텀 항목 추가 함수
-function addCustomAttribute() {
+async function addCustomAttribute() {
     const lang = currentLang;
     const t = translations[lang];
     const totalCriteria = criteria.length + customCriteria.length;
@@ -403,10 +646,11 @@ function addCustomAttribute() {
 
     const id = "custom_" + Date.now();
     const type = typeSelect.value === "binary" ? "binary" : "rating";
-    customCriteria.push({ id, label: name, type });
+    // 입력한 언어를 원문으로 두고, 나머지 언어는 번역이 도착하기 전까지 원문으로 채워둔다.
+    const newItem = { id, label: { ko: name, en: name, zh: name }, type, sourceLang: lang };
+    customCriteria.push(newItem);
 
-    // localStorage에 저장
-    localStorage.setItem("customCriteria", JSON.stringify(customCriteria));
+    await savePreferences({ custom_criteria: customCriteria });
 
     // 입력 초기화
     nameInput.value = "";
@@ -415,42 +659,59 @@ function addCustomAttribute() {
     // 커스텀 항목 목록 및 폼 리렌더
     renderCustomAttrList();
     renderCustomAttrForms();
+    loadSavedWeights(currentWeights);
 
-    // 저장된 가중치 복원
-    const savedWeights = readStoredJSON("weights", null);
-    if (savedWeights) loadSavedWeights(savedWeights);
+    // 다른 두 언어로 자동 번역 (백그라운드에서 진행 후 화면 갱신)
+    translateCustomLabel(newItem);
+}
+
+// MyMemory 무료 번역 API 언어 코드 매핑
+const TRANSLATE_LANG_CODE = { ko: "ko", en: "en", zh: "zh-CN" };
+const ALL_APP_LANGS = ["ko", "en", "zh"];
+
+// 사용자가 입력한 커스텀 항목명을 나머지 두 언어로 번역해서 채워 넣는다.
+// 무료 공개 API(MyMemory)를 사용하므로 품질/요청 한도가 제한적일 수 있다.
+async function translateCustomLabel(item) {
+    const sourceLang = item.sourceLang || currentLang;
+    const sourceText = item.label[sourceLang];
+    const targets = ALL_APP_LANGS.filter(l => l !== sourceLang);
+
+    await Promise.all(targets.map(async (targetLang) => {
+        try {
+            const langpair = `${TRANSLATE_LANG_CODE[sourceLang]}|${TRANSLATE_LANG_CODE[targetLang]}`;
+            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(sourceText)}&langpair=${langpair}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const translated = data && data.responseData && data.responseData.translatedText;
+            if (translated) {
+                item.label[targetLang] = translated;
+            }
+        } catch (e) {
+            // 번역 실패 시 원문 텍스트가 그대로 남는다 (자동 실패 대응)
+        }
+    }));
+
+    await savePreferences({ custom_criteria: customCriteria });
+
+    // 화면에 번역된 라벨 반영
+    renderCustomAttrForms();
+    loadSavedWeights(currentWeights);
 }
 
 // 커스텀 항목 삭제 함수
-function removeCustomAttribute(id) {
+async function removeCustomAttribute(id) {
     customCriteria = customCriteria.filter(c => c.id !== id);
-    localStorage.setItem("customCriteria", JSON.stringify(customCriteria));
+    await savePreferences({ custom_criteria: customCriteria });
     renderCustomAttrList();
     renderCustomAttrForms();
-
-    const savedWeights = readStoredJSON("weights", null);
-    if (savedWeights) loadSavedWeights(savedWeights);
+    loadSavedWeights(currentWeights);
 }
 
-// 커스텀 항목 목록 UI 렌더링
+// "항목 추가" 박스의 잔여 개수 텍스트만 업데이트 (개별 항목 삭제는 리스트의 ✕ 버튼으로 처리)
 function renderCustomAttrList() {
     const lang = currentLang;
     const t = translations[lang];
-    const listEl = document.getElementById("custom-attr-list");
-    if (!listEl) return;
-    listEl.innerHTML = "";
 
-    customCriteria.forEach(c => {
-        const typeLabel = c.type === "binary" ? t.addAttrBinary : t.addAttrRating;
-        const item = document.createElement("div");
-        item.className = "custom-attr-item";
-        item.innerHTML = `
-            <span>${escapeHtml(c.label)} <small style="color:#999;">(${typeLabel})</small></span>
-            <button class="remove-attr-btn" onclick="removeCustomAttribute('${c.id}')">✕</button>`;
-        listEl.appendChild(item);
-    });
-
-    // 추가 UI 상태 업데이트
     const addAttrTitleEl = document.getElementById("add-attr-title-text");
     if (addAttrTitleEl) {
         const remaining = MAX_CRITERIA - criteria.length - customCriteria.length;
@@ -476,6 +737,8 @@ function changeLanguage(lang) {
     // 정적 텍스트 번역 적용
     document.getElementById("title-stress").innerHTML = translations[lang].titleStress;
     document.getElementById("title-choice").innerHTML = translations[lang].titleChoice;
+    document.getElementById("login-title-stress").innerHTML = translations[lang].titleStress;
+    document.getElementById("login-title-choice").innerHTML = translations[lang].titleChoice;
     document.getElementById("go-btn").innerText = translations[lang].goBtn;
     document.getElementById("unlock-banner-text").innerText = translations[lang].unlockText;
     document.getElementById("unlock-banner-btn").innerText = translations[lang].unlockBtn;
@@ -489,12 +752,25 @@ function changeLanguage(lang) {
         : translations[lang].submitBtn;
     document.getElementById("result-header").innerText = translations[lang].resultHeader;
 
-    document.getElementById("th-rank").innerText = translations[lang].thRank;
-    document.getElementById("th-name").innerText = translations[lang].thName;
-    document.getElementById("th-score").innerText = translations[lang].thScore;
-    document.getElementById("th-action").innerText = translations[lang].thAction;
     document.getElementById("step1-toggle").setAttribute("aria-expanded", String(preferenceOpen));
     document.getElementById("step2-toggle").setAttribute("aria-expanded", String(propertyOpen));
+
+    // 로그인 화면 텍스트
+    document.getElementById("auth-tab-login").innerText = translations[lang].loginBtn;
+    document.getElementById("auth-tab-signup").innerText = translations[lang].signupBtn;
+    document.getElementById("auth-username-label").innerText = translations[lang].usernameLabel;
+    document.getElementById("auth-username").placeholder = translations[lang].usernamePlaceholder;
+    document.getElementById("auth-email-label").innerText = translations[lang].emailLabel;
+    document.getElementById("auth-email").placeholder = translations[lang].emailPlaceholder;
+    document.getElementById("auth-password-label").innerText = translations[lang].passwordLabel;
+    document.getElementById("auth-password").placeholder = translations[lang].passwordPlaceholder;
+    document.getElementById("auth-submit-btn").innerText = authMode === "signup" ? translations[lang].signupBtn : translations[lang].loginBtn;
+    document.getElementById("login-tag").innerText = translations[lang].loginTag;
+    document.getElementById("login-note").innerText = translations[lang].loginNote;
+    document.getElementById("signout-btn").innerText = translations[lang].signOutBtn;
+    document.getElementById("ad-label").innerText = translations[lang].adLabel;
+    document.getElementById("ad-placeholder").innerText = translations[lang].adPlaceholder;
+    updateGreeting();
 
     // 커스텀 항목 추가 UI 번역 업데이트
     const newAttrInput = document.getElementById("new-attr-name");
@@ -511,7 +787,7 @@ function changeLanguage(lang) {
 
     // 생성된 입력 폼 라벨 및 바이너리 버튼 다국어 즉시 업데이트 (기본 항목)
     [...criteria, ...customCriteria].forEach(c => {
-        const baseLabel = criteria.some(x => x.id === c.id) ? criterionLabel(lang, c) : c.label;
+        const baseLabel = criteria.some(x => x.id === c.id) ? criterionLabel(lang, c) : customLabel(c, lang);
         const pLabel = document.getElementById(`p-label-${c.id}`);
         if (pLabel) pLabel.innerText = c.type === "binary" ? baseLabel : baseLabel + translations[lang].scoreLabelSuffix;
         const btnYes = document.getElementById(`p-btn-yes-${c.id}`);
@@ -527,31 +803,33 @@ function changeLanguage(lang) {
     // 커스텀 항목 목록 업데이트 (언어에 따른 타입명 갱신)
     renderCustomAttrList();
 
-    // 매물 비교 랭킹 테이블 언어 리셋 적용
+    // 매물 비교 랭킹 카드 언어 리셋 적용
     updateRankingTable();
 }
 
-// 단계 이동 함수
+// 단계 이동 함수: "Go" 클릭 시 가중치가 이미 저장돼 있으면 1단계는 자동으로 접어두고
+// 곧바로 2단계(매물 점수 입력)로 진입한다.
 function startApp() {
+    if (!currentUser) return;
+
     const step1 = document.getElementById("step1-section");
     const step2 = document.getElementById("step2-section");
-    const savedWeights = readStoredJSON("weights", null);
-    const firstVisit = !hasVisitedApp;
-    hasVisitedApp = true;
+    const hasWeights = currentWeights && Object.keys(currentWeights).length > 0;
 
-    if (savedWeights) loadSavedWeights(savedWeights);
+    if (hasWeights) loadSavedWeights(currentWeights);
 
-    preferenceOpen = firstVisit;
-    propertyOpen = false;
+    preferenceOpen = !hasWeights;
+    propertyOpen = hasWeights;
     step1.classList.toggle("is-collapsed", !preferenceOpen);
-    step2.classList.add("is-collapsed");
+    step2.classList.toggle("is-collapsed", !propertyOpen);
     changePreferenceToggleLabel();
 
     // 별개 페이지로 이동한 것처럼 주소창 해시를 변경 (뒤로가기로 타이틀 화면 복귀 가능)
-    // hashchange 이벤트는 비동기로 발생하므로, 화면 전환은 즉시 직접 적용한다.
     location.hash = APP_ROUTE;
     applyRoute();
-    step1.scrollIntoView({ behavior: "smooth" });
+
+    const scrollTarget = hasWeights ? step2 : step1;
+    scrollTarget.scrollIntoView({ behavior: "smooth" });
 }
 
 function changePreferenceToggleLabel() {
@@ -587,9 +865,9 @@ function goToStep2() {
         if (!val) return alert(translations[currentLang].alertSelectWeight(criterionLabel(currentLang, c)));
         weights[c.id] = Number(val);
     }
-    
-    // 가중치를 로컬 스토리지에 저장
-    localStorage.setItem("weights", JSON.stringify(weights));
+
+    currentWeights = weights;
+    savePreferences({ weights });
 
     document.getElementById("step1-section").classList.add("is-collapsed");
     preferenceOpen = false;
@@ -666,10 +944,14 @@ function editProperty(id) {
 }
 
 // 매물 삭제 함수
-function deleteProperty(id) {
+async function deleteProperty(id) {
     if (confirm(translations[currentLang].confirmDelete)) {
+        const { error } = await sb.from("properties").delete().eq("id", id).eq("user_id", currentUser.id);
+        if (error) {
+            alert(error.message);
+            return;
+        }
         propertyList = propertyList.filter(p => String(p.id) !== String(id));
-        localStorage.setItem("propertyList", JSON.stringify(propertyList));
 
         // 현재 삭제 중인 매물이 편집 중이던 항목이라면 편집 상태 초기화
         if (String(editingId) === String(id)) {
@@ -684,7 +966,7 @@ function deleteProperty(id) {
 }
 
 // 매물 평가 실행 및 저장
-function analyzeProperty() {
+async function analyzeProperty() {
     const name = document.getElementById("prop-name").value.trim();
     if (!name) return alert(translations[currentLang].alertEnterName);
 
@@ -700,7 +982,7 @@ function analyzeProperty() {
     for (let c of customCriteria) {
         const el = document.getElementById(`p-${c.id}`);
         if (el && !el.value) {
-            alert(translations[currentLang].alertSelectScore(c.label));
+            alert(translations[currentLang].alertSelectScore(customLabel(c, currentLang)));
             return;
         }
     }
@@ -732,64 +1014,81 @@ function analyzeProperty() {
     // 100점 만점 기준으로 환산
     const finalScore = maxPossibleScore > 0 ? ((totalScore / maxPossibleScore) * 100).toFixed(1) : "0.0";
 
-    const wasEditing = editingId !== null;
+    const submitBtn = document.getElementById("submit-btn");
+    submitBtn.disabled = true;
 
-    if (wasEditing) {
-        // 편집 저장 모드
-        const propIndex = propertyList.findIndex(p => String(p.id) === String(editingId));
-        if (propIndex !== -1) {
-            propertyList[propIndex].name = name;
-            propertyList[propIndex].scores = scores;
-            propertyList[propIndex].score = Number(finalScore);
+    try {
+        if (editingId !== null) {
+            // 편집 저장 모드
+            const { error } = await sb.from("properties")
+                .update({ name, scores, score: Number(finalScore) })
+                .eq("id", editingId)
+                .eq("user_id", currentUser.id);
+            if (error) throw error;
+
+            const propIndex = propertyList.findIndex(p => String(p.id) === String(editingId));
+            if (propIndex !== -1) {
+                propertyList[propIndex].name = name;
+                propertyList[propIndex].scores = scores;
+                propertyList[propIndex].score = Number(finalScore);
+            }
+            editingId = null;
+            document.getElementById("submit-btn").innerText = translations[currentLang].submitBtn;
+        } else {
+            // 신규 추가 모드
+            const { data, error } = await sb.from("properties")
+                .insert({ user_id: currentUser.id, name, scores, score: Number(finalScore) })
+                .select()
+                .single();
+            if (error) throw error;
+
+            propertyList.push({ id: data.id, name, scores, score: Number(finalScore) });
         }
-        editingId = null;
-        document.getElementById("submit-btn").innerText = translations[currentLang].submitBtn;
-    } else {
-        // 신규 추가 모드
-        const propId = Date.now() + Math.random();
-        propertyList.push({ id: propId, name, scores, score: Number(finalScore) });
+    } catch (err) {
+        alert(err && err.message ? err.message : String(err));
+        submitBtn.disabled = false;
+        return;
     }
+    submitBtn.disabled = false;
 
     // 리스트 정렬
     propertyList.sort((a, b) => b.score - a.score);
-
-    // 로컬 스토리지에 저장
-    localStorage.setItem("propertyList", JSON.stringify(propertyList));
 
     document.getElementById("prop-name").value = "";
     clearScoreFields([...criteria, ...customCriteria]);
 
     updateRankingTable();
 
-    if (wasEditing) {
-        location.hash = "";
-        applyRoute();
-        document.getElementById("title-section").scrollIntoView({ behavior: "smooth" });
-    }
-
+    // 저장 후에는 첫 화면(랜딩)으로 돌아가 갱신된 랭킹을 바로 보여준다.
+    location.hash = "";
+    applyRoute();
+    document.getElementById("title-section").scrollIntoView({ behavior: "smooth" });
 }
 
-// 테이블 갱신
+// 랭킹 카드 갱신 (첫 화면/랜딩 페이지에 노출)
 function updateRankingTable() {
-    const body = document.getElementById("ranking-body");
+    const body = document.getElementById("ranking-cards");
     if (!body) return;
-    
+
+    const t = translations[currentLang];
+
     body.innerHTML = propertyList.map((prop, index) => {
-        const rankStr = translations[currentLang].rankFormat(index + 1);
-        const scoreStr = translations[currentLang].scoreFormat(prop.score);
+        const rankStr = t.rankFormat(index + 1);
+        const scoreStr = t.scoreFormat(prop.score);
         return `
-            <tr>
-                <td>${rankStr}</td>
-                <td><b>${escapeHtml(prop.name)}</b></td>
-                <td><span class="score-tag">${scoreStr}</span></td>
-                <td>
-                    <button class="ranking-btn edit-btn" onclick="editProperty('${prop.id}')">${translations[currentLang].editBtn}</button>
-                    <button class="ranking-btn delete-btn" onclick="deleteProperty('${prop.id}')">${translations[currentLang].deleteBtn}</button>
-                </td>
-            </tr>`;
+            <div class="rank-card">
+                <div class="rank-tab">${rankStr}</div>
+                <div class="rank-card-main">
+                    <div class="rank-card-name">${escapeHtml(prop.name)}</div>
+                    <div class="rank-card-actions">
+                        <button class="ranking-btn edit-btn" onclick="editProperty('${prop.id}')">${t.editBtn}</button>
+                        <button class="ranking-btn delete-btn" onclick="deleteProperty('${prop.id}')">${t.deleteBtn}</button>
+                    </div>
+                </div>
+                <div class="rank-card-score"><span class="score-tag">${scoreStr}</span></div>
+            </div>`;
     }).join("");
 
-    const isUnlocked = localStorage.getItem("isUnlocked") === "true";
     const unlockBanner = document.getElementById("unlock-banner");
     const goBtn = document.getElementById("go-btn");
 
@@ -803,12 +1102,13 @@ function updateRankingTable() {
         }
     }
 
-    document.getElementById("result-section").style.display = "block";
+    document.getElementById("result-section").style.display = propertyList.length ? "block" : "none";
 }
 
 // 프리미엄 기능 잠금 해제
-function unlockApp() {
-    localStorage.setItem("isUnlocked", "true");
+async function unlockApp() {
+    isUnlocked = true;
+    await savePreferences({ is_unlocked: true });
     alert(translations[currentLang].alertPaymentSuccess);
     updateRankingTable();
 }

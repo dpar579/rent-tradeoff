@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Renting TradeOff</title>
+    <title>RentBest | Renting TradeOff</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -18,43 +18,81 @@
             <button class="lang-btn" id="lang-zh" onclick="changeLanguage('zh')">中文</button>
         </div>
 
-        <h1 id="app-header" style="display: none;">⚖️ Renting TradeOff</h1>
+        <!-- 0. 로그인 전 화면: 이메일/비밀번호 회원가입 및 로그인 (Supabase Auth) -->
+        <div class="section hero-section login-section" id="login-section">
+            <div class="card login-card">
+                <div class="title-phrase" style="font-size: 1.9rem;">
+                    <span id="login-title-stress" class="stress-text">Zero Stress</span>, <span id="login-title-choice"
+                        class="choice-text">Best Choice</span>.
+                </div>
+                <p class="login-tag" id="login-tag">Sign in to save your comparisons and pick up right where you left
+                    off.</p>
 
-        <!-- 타이틀 페이지 섹션 -->
-        <div class="section" id="title-section" style="text-align: center; padding: 100px 20px;">
-            <div class="title-phrase">
-                <span id="title-stress" class="stress-text">Zero Stress</span>, <span id="title-choice" class="choice-text">Best Choice</span>.
-            </div>
-            <button id="go-btn" onclick="startApp()" class="go-btn" style="max-width: 180px; margin: 40px auto 0; display: block; font-size: 18px; padding: 14px; border-radius: 30px;">GO</button>
-            <div id="unlock-banner" class="premium-banner" style="display: none; margin-top: 40px;">
-                <span class="banner-icon">✨</span>
-                <span id="unlock-banner-text" class="banner-text">More options? Unlock unlimited listings for 30 days for just $4.99</span>
-                <button id="unlock-banner-btn" class="unlock-btn" onclick="unlockApp()">Unlock Now</button>
+                <div class="auth-tabs">
+                    <button type="button" class="auth-tab active" id="auth-tab-login"
+                        onclick="switchAuthMode('login')">Log in</button>
+                    <button type="button" class="auth-tab" id="auth-tab-signup" onclick="switchAuthMode('signup')">Sign
+                        up</button>
+                </div>
+
+                <div class="auth-form">
+                    <div class="input-group" id="auth-username-group" style="display:none;">
+                        <label id="auth-username-label">Username</label>
+                        <input type="text" id="auth-username" placeholder="e.g. renter123">
+                    </div>
+                    <div class="input-group">
+                        <label id="auth-email-label">Email</label>
+                        <input type="email" id="auth-email" placeholder="you@example.com">
+                    </div>
+                    <div class="input-group">
+                        <label id="auth-password-label">Password</label>
+                        <input type="password" id="auth-password" placeholder="••••••••">
+                    </div>
+                    <p class="auth-message" id="auth-error" style="display:none;"></p>
+                    <button type="button" id="auth-submit-btn" onclick="handleAuthSubmit()">Log in</button>
+                </div>
+
+                <p class="login-note" id="login-note">Your data is securely stored with Supabase.</p>
             </div>
         </div>
 
-        <div class="section accordion-section" id="step1-section" style="display: none;">
+        <h1 id="app-header" style="display: none;">⚖️ Renting TradeOff</h1>
+
+        <!-- 로그인 후 타이틀/랜딩 페이지 -->
+        <div class="section hero-section" id="title-section" style="display: none;">
+            <div class="user-bar" id="user-bar" style="display:none;">
+                <span id="user-greeting"></span>
+                <button class="signout-btn" id="signout-btn" onclick="signOutUser()">Sign out</button>
+            </div>
+
+            <div class="title-phrase">
+                <span id="title-stress" class="stress-text">Zero Stress</span>, <span id="title-choice"
+                    class="choice-text">Best Choice</span>.
+            </div>
+            <button id="go-btn" onclick="startApp()" class="go-btn"
+                style="max-width: 180px; margin: 30px auto 0; display: block; font-size: 18px; padding: 14px; border-radius: 30px;">GO</button>
+            <div id="unlock-banner" class="premium-banner" style="display: none; margin-top: 30px;">
+                <span class="banner-icon">✨</span>
+                <span id="unlock-banner-text" class="banner-text">More options? Unlock unlimited listings for 30 days
+                    for just $4.99</span>
+                <button id="unlock-banner-btn" class="unlock-btn" onclick="unlockApp()">Unlock Now</button>
+            </div>
+
+            <!-- 저장된 매물 랭킹: 첫 화면(랜딩)에 카드 형태로 노출 -->
+            <div class="result card-stack" id="result-section" style="display:none;">
+                <h2 id="result-header">📊 Property Ranking</h2>
+                <div id="ranking-cards"></div>
+            </div>
+        </div>
+
+        <div class="section accordion-section card" id="step1-section" style="display: none;">
             <button type="button" class="accordion-toggle" id="step1-toggle" onclick="togglePreferenceSection()">
                 <span id="step1-header">1. 나의 선호도 설정 (Weighting: 1~5)</span>
                 <span class="accordion-caret" id="step1-caret">▾</span>
             </button>
             <div id="weighting-form">
             </div>
-            <button id="step1-next-btn" onclick="goToStep2()" style="margin-top: 15px;">Next</button>
-        </div>
-
-        <div class="section accordion-section is-collapsed" id="step2-section" style="display:none;">
-            <button type="button" class="accordion-toggle" id="step2-toggle" onclick="togglePropertySection()">
-                <span id="step2-header">2. 매물 점수 입력 (Score: 1~5)</span>
-                <span class="accordion-caret" id="step2-caret">▾</span>
-            </button>
-            <div class="input-group">
-                <label id="prop-name-label">매물 이름/닉네임</label>
-                <input type="text" id="prop-name" placeholder="예: 지역 이름">
-            </div>
-            <div id="property-form">
-            </div>
-            <!-- 커스텀 항목 추가 UI -->
+            <!-- 커스텀 항목 추가 UI (선호도 설정 화면에서만 관리) -->
             <div class="add-attr-section">
                 <div class="add-attr-title">
                     <span>➕</span>
@@ -68,28 +106,33 @@
                     </select>
                     <button type="button" class="add-attr-btn" onclick="addCustomAttribute()">+ 추가</button>
                 </div>
-                <div id="custom-attr-list" style="margin-top: 10px;"></div>
             </div>
-            <div class="button-group" style="display: flex; gap: 10px; margin-top: 15px;">
+            <button id="step1-next-btn" onclick="goToStep2()" style="margin-top: 15px;">Next</button>
+        </div>
+
+        <div class="section accordion-section is-collapsed card" id="step2-section" style="display:none;">
+            <button type="button" class="accordion-toggle" id="step2-toggle" onclick="togglePropertySection()">
+                <span id="step2-header">2. 매물 점수 입력 (Score: 1~5)</span>
+                <span class="accordion-caret" id="step2-caret">▾</span>
+            </button>
+            <div class="input-group">
+                <label id="prop-name-label">매물 이름/닉네임</label>
+                <input type="text" id="prop-name" placeholder="예: 지역 이름">
+            </div>
+            <div id="property-form">
+            </div>
+            <div class="button-group">
                 <button id="submit-btn" onclick="analyzeProperty()" style="flex: 1;">매물 평가 및 저장</button>
             </div>
         </div>
 
-        <div class="section result" id="result-section" style="display:none;">
-            <h2 id="result-header">📊 매물 비교 랭킹</h2>
-            <table id="ranking-table">
-                <thead>
-                    <tr>
-                        <th id="th-rank">순위</th>
-                        <th id="th-name">매물명</th>
-                        <th id="th-score">총점</th>
-                        <th id="th-action">관리</th>
-                    </tr>
-                </thead>
-                <tbody id="ranking-body"></tbody>
-            </table>
+        <!-- 광고 슬롯 (Ad placeholder) -->
+        <div class="ad-slot">
+            <span class="ad-label" id="ad-label">Advertisement</span>
+            <div class="ad-placeholder" id="ad-placeholder">Your ad could appear here</div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="script.js"></script>
 </body>
 
