@@ -483,6 +483,7 @@ window.onload = async function () {
     // 기본 폼(로그인 전 상태) 먼저 렌더링
     renderForms();
     renderCustomAttrList();
+    setupAuthEnterKey();
 
     // Supabase 세션 복원 (이미 로그인돼 있으면 자동으로 앱 화면까지 진입)
     const { data: { session } } = await sb.auth.getSession();
@@ -496,6 +497,20 @@ window.onload = async function () {
     // 현재 주소창 해시 + 로그인 상태에 맞는 화면 표시 (새로고침/북마크 대응)
     applyRoute();
 };
+
+// 로그인/회원가입 입력창에서 Enter를 누르면 제출 버튼을 누른 것과 동일하게 동작하도록 설정
+function setupAuthEnterKey() {
+    ["auth-username", "auth-email", "auth-password"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                handleAuthSubmit();
+            }
+        });
+    });
+}
 
 // Supabase 세션이 만료되거나 다른 탭에서 로그아웃한 경우 등을 감지
 sb.auth.onAuthStateChange((event) => {
@@ -646,8 +661,8 @@ async function addCustomAttribute() {
 
     const id = "custom_" + Date.now();
     const type = typeSelect.value === "binary" ? "binary" : "rating";
-    // 입력한 언어를 원문으로 두고, 나머지 언어는 번역이 도착하기 전까지 원문으로 채워둔다.
-    const newItem = { id, label: { ko: name, en: name, zh: name }, type, sourceLang: lang };
+    // 유저가 입력한 언어 그대로 저장 (자동 번역 없음)
+    const newItem = { id, label: name, type };
     customCriteria.push(newItem);
 
     await savePreferences({ custom_criteria: customCriteria });
@@ -658,42 +673,6 @@ async function addCustomAttribute() {
 
     // 커스텀 항목 목록 및 폼 리렌더
     renderCustomAttrList();
-    renderCustomAttrForms();
-    loadSavedWeights(currentWeights);
-
-    // 다른 두 언어로 자동 번역 (백그라운드에서 진행 후 화면 갱신)
-    translateCustomLabel(newItem);
-}
-
-// MyMemory 무료 번역 API 언어 코드 매핑
-const TRANSLATE_LANG_CODE = { ko: "ko", en: "en", zh: "zh-CN" };
-const ALL_APP_LANGS = ["ko", "en", "zh"];
-
-// 사용자가 입력한 커스텀 항목명을 나머지 두 언어로 번역해서 채워 넣는다.
-// 무료 공개 API(MyMemory)를 사용하므로 품질/요청 한도가 제한적일 수 있다.
-async function translateCustomLabel(item) {
-    const sourceLang = item.sourceLang || currentLang;
-    const sourceText = item.label[sourceLang];
-    const targets = ALL_APP_LANGS.filter(l => l !== sourceLang);
-
-    await Promise.all(targets.map(async (targetLang) => {
-        try {
-            const langpair = `${TRANSLATE_LANG_CODE[sourceLang]}|${TRANSLATE_LANG_CODE[targetLang]}`;
-            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(sourceText)}&langpair=${langpair}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            const translated = data && data.responseData && data.responseData.translatedText;
-            if (translated) {
-                item.label[targetLang] = translated;
-            }
-        } catch (e) {
-            // 번역 실패 시 원문 텍스트가 그대로 남는다 (자동 실패 대응)
-        }
-    }));
-
-    await savePreferences({ custom_criteria: customCriteria });
-
-    // 화면에 번역된 라벨 반영
     renderCustomAttrForms();
     loadSavedWeights(currentWeights);
 }
@@ -815,11 +794,13 @@ function startApp() {
     const step1 = document.getElementById("step1-section");
     const step2 = document.getElementById("step2-section");
     const hasWeights = currentWeights && Object.keys(currentWeights).length > 0;
+    const hasProperty = propertyList.length > 0;
+    const skipPreference = hasWeights || hasProperty;
 
     if (hasWeights) loadSavedWeights(currentWeights);
 
-    preferenceOpen = !hasWeights;
-    propertyOpen = hasWeights;
+    preferenceOpen = !skipPreference;
+    propertyOpen = skipPreference;
     step1.classList.toggle("is-collapsed", !preferenceOpen);
     step2.classList.toggle("is-collapsed", !propertyOpen);
     changePreferenceToggleLabel();
@@ -828,7 +809,7 @@ function startApp() {
     location.hash = APP_ROUTE;
     applyRoute();
 
-    const scrollTarget = hasWeights ? step2 : step1;
+    const scrollTarget = skipPreference ? step2 : step1;
     scrollTarget.scrollIntoView({ behavior: "smooth" });
 }
 

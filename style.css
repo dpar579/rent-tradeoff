@@ -123,6 +123,14 @@ h2 {
     gap: 6px;
 }
 
+#weighting-form .input-inline {
+    justify-content: flex-start;
+}
+
+#weighting-form .input-inline .weight-buttons {
+    margin-left: auto;
+}
+
 #property-form .input-inline label {
     text-align: left;
 }
