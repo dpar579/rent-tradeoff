@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentBest | Renting TradeOff</title>
+    <meta name="description"
+        content="RentBest는 전월세 매물을 비교할 때 나만의 기준(가중치)으로 점수를 매겨 객관적인 랭킹을 만들어주는 의사결정 도구입니다. 통근시간, 가격, 관리비 등 항목별 중요도를 직접 설정하고, 여러 매물을 한눈에 비교해보세요.">
+    <title>RentBest | 전월세 매물 비교 의사결정 도구</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -53,6 +55,26 @@
                 </div>
 
                 <p class="login-note" id="login-note">Your data is securely stored with Supabase.</p>
+            </div>
+
+            <!-- 크롤러/비로그인 방문자에게 보이는 실질적인 서비스 소개 콘텐츠 -->
+            <div class="about-content">
+                <h2 id="about-heading">RentBest는 이런 서비스예요</h2>
+                <p id="about-intro">
+                    자취방이나 전월세 매물을 알아볼 때, 통근시간·가격·관리비·주차 여부 등 고려할 요소가 많아지면 어떤 집이 정말 나에게 맞는지 판단하기 어려워집니다.
+                    RentBest는 사용자가 직접 중요하게 생각하는 항목에 가중치를 매기고, 실제로 둘러본 매물마다 점수를 입력하면 자동으로 100점 만점 기준의 랭킹을 계산해주는 의사결정
+                    도구입니다.
+                    감으로 고르는 대신, 나만의 기준으로 매물을 비교하고 기록을 남겨두었다가 나중에 다시 비교해볼 수 있습니다.
+                </p>
+
+                <h3 id="how-it-works-heading">이용 방법</h3>
+                <ol class="how-it-works-list">
+                    <li id="how-step-1"><strong>1. 나의 선호도 설정</strong> — 통근시간, 가격, 관리비 등 기본 항목의 중요도를 1~5점으로 매기고, 필요하면 나만의
+                        항목을 추가하거나 삭제할 수 있습니다.</li>
+                    <li id="how-step-2"><strong>2. 매물 점수 입력</strong> — 실제로 둘러본 매물의 닉네임을 정하고, 같은 항목 기준으로 점수를 입력합니다.</li>
+                    <li id="how-step-3"><strong>3. 랭킹 확인</strong> — 가중치와 점수를 곱해 계산한 총점으로 매물들의 순위가 자동으로 정리되어, 로그인할 때마다 첫
+                        화면에서 바로 확인할 수 있습니다.</li>
+                </ol>
             </div>
         </div>
 
@@ -131,6 +153,16 @@
             <span class="ad-label" id="ad-label">Advertisement</span>
             <div class="ad-placeholder" id="ad-placeholder">Your ad could appear here</div>
         </div>
+
+        <!-- 사이트 푸터: 개인정보처리방침/이용약관/문의 -->
+        <footer class="site-footer">
+            <a href="privacy.html" id="footer-privacy">개인정보처리방침</a>
+            <span class="footer-dot">·</span>
+            <a href="terms.html" id="footer-terms">이용약관</a>
+            <span class="footer-dot">·</span>
+            <a href="mailto:rentbest26@gmail.com" id="footer-contact">문의하기</a>
+            <div class="footer-copyright">© 2026 RentBest</div>
+        </footer>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="script.js"></script>

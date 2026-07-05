@@ -320,6 +320,15 @@ const translations = {
         authCheckEmail: "가입 확인 메일을 보냈어요. 메일함을 확인한 후 로그인해 주세요.",
         adLabel: "광고",
         adPlaceholder: "이 자리에 광고가 표시됩니다",
+        aboutHeading: "RentBest는 이런 서비스예요",
+        aboutIntro: "자취방이나 전월세 매물을 알아볼 때, 통근시간·가격·관리비·주차 여부 등 고려할 요소가 많아지면 어떤 집이 정말 나에게 맞는지 판단하기 어려워집니다. RentBest는 사용자가 직접 중요하게 생각하는 항목에 가중치를 매기고, 실제로 둘러본 매물마다 점수를 입력하면 자동으로 100점 만점 기준의 랭킹을 계산해주는 의사결정 도구입니다. 감으로 고르는 대신, 나만의 기준으로 매물을 비교하고 기록을 남겨두었다가 나중에 다시 비교해볼 수 있습니다.",
+        howItWorksHeading: "이용 방법",
+        howStep1: "<strong>1. 나의 선호도 설정</strong> — 통근시간, 가격, 관리비 등 기본 항목의 중요도를 1~5점으로 매기고, 필요하면 나만의 항목을 추가하거나 삭제할 수 있습니다.",
+        howStep2: "<strong>2. 매물 점수 입력</strong> — 실제로 둘러본 매물의 닉네임을 정하고, 같은 항목 기준으로 점수를 입력합니다.",
+        howStep3: "<strong>3. 랭킹 확인</strong> — 가중치와 점수를 곱해 계산한 총점으로 매물들의 순위가 자동으로 정리되어, 로그인할 때마다 첫 화면에서 바로 확인할 수 있습니다.",
+        footerPrivacy: "개인정보처리방침",
+        footerTerms: "이용약관",
+        footerContact: "문의하기",
         criteria: {
             commute: "통근 시간",
             price: "가격",
@@ -390,6 +399,15 @@ const translations = {
         authCheckEmail: "Check your email to confirm your account, then log in.",
         adLabel: "Advertisement",
         adPlaceholder: "Your ad could appear here",
+        aboutHeading: "What RentBest does",
+        aboutIntro: "When you're hunting for a rental, it's hard to weigh commute time, price, maintenance fees, parking, and everything else at once and know which place is really right for you. RentBest lets you set your own weighting for the criteria that matter most, then score each place you visit — it automatically calculates a ranking out of 100 points. Instead of relying on gut feeling, you compare listings by your own standards and keep a record you can revisit later.",
+        howItWorksHeading: "How it works",
+        howStep1: "<strong>1. Set your preferences</strong> — Rate how important commute time, price, maintenance fees, and other criteria are to you (1-5), and add or remove criteria as needed.",
+        howStep2: "<strong>2. Score each property</strong> — Give each place you visit a nickname and score it on the same criteria.",
+        howStep3: "<strong>3. Check the ranking</strong> — Your weights and scores are multiplied into a total score, automatically ranking your properties on the home screen every time you log in.",
+        footerPrivacy: "Privacy Policy",
+        footerTerms: "Terms of Service",
+        footerContact: "Contact",
         criteria: {
             commute: "Commute time",
             price: "Price",
@@ -460,6 +478,15 @@ const translations = {
         authCheckEmail: "确认邮件已发送，请查收后再登录。",
         adLabel: "广告",
         adPlaceholder: "此处可展示广告",
+        aboutHeading: "RentBest 是什么",
+        aboutIntro: "找租房时，通勤时间、价格、管理费、是否有车位等因素太多，很难判断哪套房子才真正适合自己。RentBest 让你为自己看重的条件设置权重，再为实际看过的每套房源打分，系统会自动计算出百分制排名。不再靠直觉选房，而是用自己的标准比较房源，并保留记录供以后再对比。",
+        howItWorksHeading: "使用方法",
+        howStep1: "<strong>1. 设置我的偏好</strong> — 为通勤时间、价格、管理费等基本项目打出1~5分的重要程度，也可以按需添加或删除自定义项目。",
+        howStep2: "<strong>2. 输入房源评分</strong> — 为实际看过的房源起个昵称，并按相同项目打分。",
+        howStep3: "<strong>3. 查看排名</strong> — 权重与评分相乘得出总分，房源排名会自动生成，每次登录都能在首页立即看到。",
+        footerPrivacy: "隐私政策",
+        footerTerms: "服务条款",
+        footerContact: "联系我们",
         criteria: {
             commute: "通勤时间",
             price: "价格",
@@ -749,6 +776,15 @@ function changeLanguage(lang) {
     document.getElementById("signout-btn").innerText = translations[lang].signOutBtn;
     document.getElementById("ad-label").innerText = translations[lang].adLabel;
     document.getElementById("ad-placeholder").innerText = translations[lang].adPlaceholder;
+    document.getElementById("about-heading").innerText = translations[lang].aboutHeading;
+    document.getElementById("about-intro").innerText = translations[lang].aboutIntro;
+    document.getElementById("how-it-works-heading").innerText = translations[lang].howItWorksHeading;
+    document.getElementById("how-step-1").innerHTML = translations[lang].howStep1;
+    document.getElementById("how-step-2").innerHTML = translations[lang].howStep2;
+    document.getElementById("how-step-3").innerHTML = translations[lang].howStep3;
+    document.getElementById("footer-privacy").innerText = translations[lang].footerPrivacy;
+    document.getElementById("footer-terms").innerText = translations[lang].footerTerms;
+    document.getElementById("footer-contact").innerText = translations[lang].footerContact;
     updateGreeting();
 
     // 커스텀 항목 추가 UI 번역 업데이트
