@@ -740,13 +740,13 @@ button:hover {
 
 .about-content h2 {
     font-size: 18px;
-    text-align: left;
+    text-align: center;
     margin-bottom: 10px;
 }
 
 .about-content h3 {
     font-size: 15px;
-    text-align: left;
+    text-align: center;
     margin: 20px 0 10px;
     color: var(--ink);
 }
@@ -756,6 +756,18 @@ button:hover {
     line-height: 1.7;
     color: var(--ink-soft);
     margin: 0;
+}
+
+.about-line {
+    margin: 0 0 10px;
+}
+
+.about-line:last-of-type {
+    margin-bottom: 0;
+}
+
+.about-line strong {
+    color: var(--ink);
 }
 
 .how-it-works-list {
@@ -787,40 +799,6 @@ button:hover {
 }
 
 .step-desc {
-    display: table-cell;
-    width: 100%;
-    vertical-align: top;
-}
-
-.about-bullet-list {
-    margin: 0 0 20px;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.about-bullet-list li {
-    display: table;
-    width: 100%;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--ink-soft);
-}
-
-.about-bullet-list strong {
-    color: var(--ink);
-}
-
-.bullet-label {
-    display: table-cell;
-    white-space: nowrap;
-    padding-right: 6px;
-    vertical-align: top;
-}
-
-.bullet-desc {
     display: table-cell;
     width: 100%;
     vertical-align: top;
