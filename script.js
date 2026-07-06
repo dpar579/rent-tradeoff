@@ -120,6 +120,7 @@ async function onSignedIn(user) {
     await loadAllUserDataFromSupabase();
     renderForms();
     renderCustomAttrList();
+    if (Object.keys(currentWeights).length) loadSavedWeights(currentWeights);
     showSignedInChrome();
     location.hash = "";
     applyRoute();
@@ -320,12 +321,14 @@ const translations = {
         authCheckEmail: "가입 확인 메일을 보냈어요. 메일함을 확인한 후 로그인해 주세요.",
         adLabel: "광고",
         adPlaceholder: "이 자리에 광고가 표시됩니다",
-        aboutHeading: "RentBest는 이런 서비스예요",
-        aboutIntro: "자취방이나 전월세 매물을 알아볼 때, 통근시간·가격·관리비·주차 여부 등 고려할 요소가 많아지면 어떤 집이 정말 나에게 맞는지 판단하기 어려워집니다. RentBest는 사용자가 직접 중요하게 생각하는 항목에 가중치를 매기고, 실제로 둘러본 매물마다 점수를 입력하면 자동으로 100점 만점 기준의 랭킹을 계산해주는 의사결정 도구입니다. 감으로 고르는 대신, 나만의 기준으로 매물을 비교하고 기록을 남겨두었다가 나중에 다시 비교해볼 수 있습니다.",
+        aboutHeading: "RentBest는 이런 서비스예요!",
+        aboutBullet1: "<span class=\"bullet-label\">⚖️ <strong>나만의 기준 설정</strong>:</span><span class=\"bullet-desc\">통근 시간, 보증금, 주차 등 내가 중요하게 생각하는 항목에 무게를 둬요.</span>",
+        aboutBullet2: "<span class=\"bullet-label\">📝 <strong>방문 기록 및 메모</strong>:</span><span class=\"bullet-desc\">자취방이나 전월세 집을 구경하면서 현장에서 바로 점수를 입력해요.</span>",
+        aboutBullet3: "<span class=\"bullet-label\">🏆 <strong>100점 만점 랭킹</strong>:</span><span class=\"bullet-desc\">복잡하게 고민할 필요 없이, 나에게 가장 잘 맞는 최적의 집을 순위로 확인해요.</span>",
         howItWorksHeading: "이용 방법",
-        howStep1: "<strong>1. 나의 선호도 설정</strong> — 통근시간, 가격, 관리비 등 기본 항목의 중요도를 1~5점으로 매기고, 필요하면 나만의 항목을 추가하거나 삭제할 수 있습니다.",
-        howStep2: "<strong>2. 매물 점수 입력</strong> — 실제로 둘러본 매물의 닉네임을 정하고, 같은 항목 기준으로 점수를 입력합니다.",
-        howStep3: "<strong>3. 랭킹 확인</strong> — 가중치와 점수를 곱해 계산한 총점으로 매물들의 순위가 자동으로 정리되어, 로그인할 때마다 첫 화면에서 바로 확인할 수 있습니다.",
+        howStep1: "<span class=\"step-label\"><strong>1. 나의 선호도 설정</strong> —</span><span class=\"step-desc\">통근시간, 가격, 관리비 등 기본 항목의 중요도를 1~5점으로 매기고, 필요하면 나만의 항목을 추가하거나 삭제할 수 있습니다.</span>",
+        howStep2: "<span class=\"step-label\"><strong>2. 매물 점수 입력</strong> —</span><span class=\"step-desc\">실제로 둘러본 매물의 닉네임을 정하고, 같은 항목 기준으로 점수를 입력합니다.</span>",
+        howStep3: "<span class=\"step-label\"><strong>3. 랭킹 확인</strong> —</span><span class=\"step-desc\">가중치와 점수를 곱해 계산한 총점으로 매물들의 순위가 자동으로 정리되어, 로그인할 때마다 첫 화면에서 바로 확인할 수 있습니다.</span>",
         footerPrivacy: "개인정보처리방침",
         footerTerms: "이용약관",
         footerContact: "문의하기",
@@ -399,12 +402,14 @@ const translations = {
         authCheckEmail: "Check your email to confirm your account, then log in.",
         adLabel: "Advertisement",
         adPlaceholder: "Your ad could appear here",
-        aboutHeading: "What RentBest does",
-        aboutIntro: "When you're hunting for a rental, it's hard to weigh commute time, price, maintenance fees, parking, and everything else at once and know which place is really right for you. RentBest lets you set your own weighting for the criteria that matter most, then score each place you visit — it automatically calculates a ranking out of 100 points. Instead of relying on gut feeling, you compare listings by your own standards and keep a record you can revisit later.",
+        aboutHeading: "What is RentBest?",
+        aboutBullet1: "<span class=\"bullet-label\">⚖️ <strong>Your Personal Criteria</strong>:</span><span class=\"bullet-desc\">Set custom weightings for what matters most to you—whether it's rent, commute time, parking, or pet-friendliness.</span>",
+        aboutBullet2: "<span class=\"bullet-label\">📝 <strong>On-the-Spot Inspection Scoring</strong>:</span><span class=\"bullet-desc\">Rate each property instantly on your phone while walking through the door.</span>",
+        aboutBullet3: "<span class=\"bullet-label\">🏆 <strong>100-Point Match Score</strong>:</span><span class=\"bullet-desc\">No more guesswork. See a real-time, personalized leaderboard to secure your perfect home with confidence.</span>",
         howItWorksHeading: "How it works",
-        howStep1: "<strong>1. Set your preferences</strong> — Rate how important commute time, price, maintenance fees, and other criteria are to you (1-5), and add or remove criteria as needed.",
-        howStep2: "<strong>2. Score each property</strong> — Give each place you visit a nickname and score it on the same criteria.",
-        howStep3: "<strong>3. Check the ranking</strong> — Your weights and scores are multiplied into a total score, automatically ranking your properties on the home screen every time you log in.",
+        howStep1: "<span class=\"step-label\"><strong>1. Set your preferences</strong> —</span><span class=\"step-desc\">Rate how important commute time, price, maintenance fees, and other criteria are to you (1-5), and add or remove criteria as needed.</span>",
+        howStep2: "<span class=\"step-label\"><strong>2. Score each property</strong> —</span><span class=\"step-desc\">Give each place you visit a nickname and score it on the same criteria.</span>",
+        howStep3: "<span class=\"step-label\"><strong>3. Check the ranking</strong> —</span><span class=\"step-desc\">Your weights and scores are multiplied into a total score, automatically ranking your properties on the home screen every time you log in.</span>",
         footerPrivacy: "Privacy Policy",
         footerTerms: "Terms of Service",
         footerContact: "Contact",
@@ -478,12 +483,14 @@ const translations = {
         authCheckEmail: "确认邮件已发送，请查收后再登录。",
         adLabel: "广告",
         adPlaceholder: "此处可展示广告",
-        aboutHeading: "RentBest 是什么",
-        aboutIntro: "找租房时，通勤时间、价格、管理费、是否有车位等因素太多，很难判断哪套房子才真正适合自己。RentBest 让你为自己看重的条件设置权重，再为实际看过的每套房源打分，系统会自动计算出百分制排名。不再靠直觉选房，而是用自己的标准比较房源，并保留记录供以后再对比。",
+        aboutHeading: "RentBest 是一个什么样的服务？",
+        aboutBullet1: "<span class=\"bullet-label\">⚖️ <strong>自定义核心标准</strong>：</span><span class=\"bullet-desc\">无论是通勤时间、租金/押金、周边治安还是朝向，由您决定各项指标的权重。</span>",
+        aboutBullet2: "<span class=\"bullet-label\">📝 <strong>看房实时打分</strong>：</span><span class=\"bullet-desc\">告别凌乱的备忘录！在实地看房（Inspection）时，随时随地用手机轻松记录每一套房源的分数。</span>",
+        aboutBullet3: "<span class=\"bullet-label\">🏆 <strong>100分制智能推荐</strong>：</span><span class=\"bullet-desc\">无需纠结，系统会根据您的标准自动计算出最佳房源排行榜，助您高效做出完美决策。</span>",
         howItWorksHeading: "使用方法",
-        howStep1: "<strong>1. 设置我的偏好</strong> — 为通勤时间、价格、管理费等基本项目打出1~5分的重要程度，也可以按需添加或删除自定义项目。",
-        howStep2: "<strong>2. 输入房源评分</strong> — 为实际看过的房源起个昵称，并按相同项目打分。",
-        howStep3: "<strong>3. 查看排名</strong> — 权重与评分相乘得出总分，房源排名会自动生成，每次登录都能在首页立即看到。",
+        howStep1: "<span class=\"step-label\"><strong>1. 设置我的偏好</strong> —</span><span class=\"step-desc\">为通勤时间、价格、管理费等基本项目打出1~5分的重要程度，也可以按需添加或删除自定义项目。</span>",
+        howStep2: "<span class=\"step-label\"><strong>2. 输入房源评分</strong> —</span><span class=\"step-desc\">为实际看过的房源起个昵称，并按相同项目打分。</span>",
+        howStep3: "<span class=\"step-label\"><strong>3. 查看排名</strong> —</span><span class=\"step-desc\">权重与评分相乘得出总分，房源排名会自动生成，每次登录都能在首页立即看到。</span>",
         footerPrivacy: "隐私政策",
         footerTerms: "服务条款",
         footerContact: "联系我们",
@@ -587,11 +594,11 @@ async function loadAllUserDataFromSupabase() {
         id: p.id,
         name: p.name,
         scores: p.scores || {},
-        score: Number(p.score)
+        score: Number(p.score),
+        note: p.note || ""
     }));
 
     updateRankingTable();
-    if (Object.keys(currentWeights).length) loadSavedWeights(currentWeights);
 }
 
 // preferences 행을 부분 갱신 (upsert)
@@ -774,10 +781,13 @@ function changeLanguage(lang) {
     document.getElementById("login-tag").innerText = translations[lang].loginTag;
     document.getElementById("login-note").innerText = translations[lang].loginNote;
     document.getElementById("signout-btn").innerText = translations[lang].signOutBtn;
-    document.getElementById("ad-label").innerText = translations[lang].adLabel;
-    document.getElementById("ad-placeholder").innerText = translations[lang].adPlaceholder;
+    // 광고 슬롯 비활성화 중 (당분간 무료 서비스) — ad-slot을 다시 켜면 아래 두 줄도 함께 주석 해제
+    // document.getElementById("ad-label").innerText = translations[lang].adLabel;
+    // document.getElementById("ad-placeholder").innerText = translations[lang].adPlaceholder;
     document.getElementById("about-heading").innerText = translations[lang].aboutHeading;
-    document.getElementById("about-intro").innerText = translations[lang].aboutIntro;
+    document.getElementById("about-bullet-1").innerHTML = translations[lang].aboutBullet1;
+    document.getElementById("about-bullet-2").innerHTML = translations[lang].aboutBullet2;
+    document.getElementById("about-bullet-3").innerHTML = translations[lang].aboutBullet3;
     document.getElementById("how-it-works-heading").innerText = translations[lang].howItWorksHeading;
     document.getElementById("how-step-1").innerHTML = translations[lang].howStep1;
     document.getElementById("how-step-2").innerHTML = translations[lang].howStep2;
@@ -943,6 +953,9 @@ function editProperty(id) {
     // 매물 이름 입력 필드에 대입
     document.getElementById("prop-name").value = prop.name;
 
+    // 메모(note) 필드 복원
+    document.getElementById("prop-note").value = prop.note || "";
+
     // 각 항목 점수 복원 및 UI 업데이트 (기본 + 커스텀)
     [...criteria, ...customCriteria].forEach(c => {
         const score = prop.scores && prop.scores[c.id] !== undefined ? prop.scores[c.id] : "";
@@ -1030,6 +1043,7 @@ async function analyzeProperty() {
 
     // 100점 만점 기준으로 환산
     const finalScore = maxPossibleScore > 0 ? ((totalScore / maxPossibleScore) * 100).toFixed(1) : "0.0";
+    const note = document.getElementById("prop-note").value.trim();
 
     const submitBtn = document.getElementById("submit-btn");
     submitBtn.disabled = true;
@@ -1037,10 +1051,18 @@ async function analyzeProperty() {
     try {
         if (editingId !== null) {
             // 편집 저장 모드
-            const { error } = await sb.from("properties")
-                .update({ name, scores, score: Number(finalScore) })
+            let { error } = await sb.from("properties")
+                .update({ name, scores, score: Number(finalScore), note })
                 .eq("id", editingId)
                 .eq("user_id", currentUser.id);
+
+            if (error && /note/i.test(error.message || "")) {
+                // note 컬럼이 아직 DB에 없는 경우: note를 빼고 재시도해서 점수/랭킹 저장은 항상 되게 한다.
+                ({ error } = await sb.from("properties")
+                    .update({ name, scores, score: Number(finalScore) })
+                    .eq("id", editingId)
+                    .eq("user_id", currentUser.id));
+            }
             if (error) throw error;
 
             const propIndex = propertyList.findIndex(p => String(p.id) === String(editingId));
@@ -1048,18 +1070,27 @@ async function analyzeProperty() {
                 propertyList[propIndex].name = name;
                 propertyList[propIndex].scores = scores;
                 propertyList[propIndex].score = Number(finalScore);
+                propertyList[propIndex].note = note;
             }
             editingId = null;
             document.getElementById("submit-btn").innerText = translations[currentLang].submitBtn;
         } else {
             // 신규 추가 모드
-            const { data, error } = await sb.from("properties")
-                .insert({ user_id: currentUser.id, name, scores, score: Number(finalScore) })
+            let { data, error } = await sb.from("properties")
+                .insert({ user_id: currentUser.id, name, scores, score: Number(finalScore), note })
                 .select()
                 .single();
+
+            if (error && /note/i.test(error.message || "")) {
+                // note 컬럼이 아직 DB에 없는 경우: note를 빼고 재시도해서 점수/랭킹 저장은 항상 되게 한다.
+                ({ data, error } = await sb.from("properties")
+                    .insert({ user_id: currentUser.id, name, scores, score: Number(finalScore) })
+                    .select()
+                    .single());
+            }
             if (error) throw error;
 
-            propertyList.push({ id: data.id, name, scores, score: Number(finalScore) });
+            propertyList.push({ id: data.id, name, scores, score: Number(finalScore), note });
         }
     } catch (err) {
         alert(err && err.message ? err.message : String(err));
@@ -1072,6 +1103,7 @@ async function analyzeProperty() {
     propertyList.sort((a, b) => b.score - a.score);
 
     document.getElementById("prop-name").value = "";
+    document.getElementById("prop-note").value = "";
     clearScoreFields([...criteria, ...customCriteria]);
 
     updateRankingTable();
@@ -1110,13 +1142,17 @@ function updateRankingTable() {
     const goBtn = document.getElementById("go-btn");
 
     if (unlockBanner && goBtn) {
-        if (propertyList.length >= 3 && !isUnlocked) {
-            unlockBanner.style.display = "flex";
-            goBtn.style.display = "none";
-        } else {
-            unlockBanner.style.display = "none";
-            goBtn.style.display = "block";
-        }
+        // ===== TEMP: 유료 잠금 기능 임시 비활성화 (원복 시 아래 블록으로 교체) =====
+        // if (propertyList.length >= 3 && !isUnlocked) {
+        //     unlockBanner.style.display = "flex";
+        //     goBtn.style.display = "none";
+        // } else {
+        //     unlockBanner.style.display = "none";
+        //     goBtn.style.display = "block";
+        // }
+        unlockBanner.style.display = "none";
+        goBtn.style.display = "block";
+        // ===== TEMP 끝 =====
     }
 
     document.getElementById("result-section").style.display = propertyList.length ? "block" : "none";

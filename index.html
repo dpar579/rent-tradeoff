@@ -59,21 +59,26 @@
 
             <!-- 크롤러/비로그인 방문자에게 보이는 실질적인 서비스 소개 콘텐츠 -->
             <div class="about-content">
-                <h2 id="about-heading">RentBest는 이런 서비스예요</h2>
-                <p id="about-intro">
-                    자취방이나 전월세 매물을 알아볼 때, 통근시간·가격·관리비·주차 여부 등 고려할 요소가 많아지면 어떤 집이 정말 나에게 맞는지 판단하기 어려워집니다.
-                    RentBest는 사용자가 직접 중요하게 생각하는 항목에 가중치를 매기고, 실제로 둘러본 매물마다 점수를 입력하면 자동으로 100점 만점 기준의 랭킹을 계산해주는 의사결정
-                    도구입니다.
-                    감으로 고르는 대신, 나만의 기준으로 매물을 비교하고 기록을 남겨두었다가 나중에 다시 비교해볼 수 있습니다.
-                </p>
+                <h2 id="about-heading">RentBest는 이런 서비스예요!</h2>
+                <ul class="about-bullet-list">
+                    <li id="about-bullet-1"><span class="bullet-label">⚖️ <strong>나만의 기준 설정</strong>:</span><span
+                            class="bullet-desc">통근 시간, 보증금, 주차 등 내가 중요하게 생각하는 항목에 무게를 둬요.</span></li>
+                    <li id="about-bullet-2"><span class="bullet-label">📝 <strong>방문 기록 및 메모</strong>:</span><span
+                            class="bullet-desc">자취방이나 전월세 집을 구경하면서 현장에서 바로 점수를 입력해요.</span></li>
+                    <li id="about-bullet-3"><span class="bullet-label">🏆 <strong>100점 만점 랭킹</strong>:</span><span
+                            class="bullet-desc">복잡하게 고민할 필요 없이, 나에게 가장 잘 맞는 최적의 집을 순위로 확인해요.</span></li>
+                </ul>
 
                 <h3 id="how-it-works-heading">이용 방법</h3>
                 <ol class="how-it-works-list">
-                    <li id="how-step-1"><strong>1. 나의 선호도 설정</strong> — 통근시간, 가격, 관리비 등 기본 항목의 중요도를 1~5점으로 매기고, 필요하면 나만의
-                        항목을 추가하거나 삭제할 수 있습니다.</li>
-                    <li id="how-step-2"><strong>2. 매물 점수 입력</strong> — 실제로 둘러본 매물의 닉네임을 정하고, 같은 항목 기준으로 점수를 입력합니다.</li>
-                    <li id="how-step-3"><strong>3. 랭킹 확인</strong> — 가중치와 점수를 곱해 계산한 총점으로 매물들의 순위가 자동으로 정리되어, 로그인할 때마다 첫
-                        화면에서 바로 확인할 수 있습니다.</li>
+                    <li id="how-step-1"><span class="step-label"><strong>1. 나의 선호도 설정</strong> —</span><span
+                            class="step-desc">통근시간, 가격, 관리비 등 기본 항목의 중요도를 1~5점으로 매기고, 필요하면 나만의 항목을 추가하거나 삭제할 수
+                            있습니다.</span></li>
+                    <li id="how-step-2"><span class="step-label"><strong>2. 매물 점수 입력</strong> —</span><span
+                            class="step-desc">실제로 둘러본 매물의 닉네임을 정하고, 같은 항목 기준으로 점수를 입력합니다.</span></li>
+                    <li id="how-step-3"><span class="step-label"><strong>3. 랭킹 확인</strong> —</span><span
+                            class="step-desc">가중치와 점수를 곱해 계산한 총점으로 매물들의 순위가 자동으로 정리되어, 로그인할 때마다 첫 화면에서 바로 확인할 수
+                            있습니다.</span></li>
                 </ol>
             </div>
         </div>
@@ -143,16 +148,20 @@
             </div>
             <div id="property-form">
             </div>
+            <div class="input-group">
+                <textarea id="prop-note" class="prop-note-box" placeholder="Note" rows="3"></textarea>
+            </div>
             <div class="button-group">
                 <button id="submit-btn" onclick="analyzeProperty()" style="flex: 1;">매물 평가 및 저장</button>
             </div>
         </div>
 
-        <!-- 광고 슬롯 (Ad placeholder) -->
+        <!-- 광고 슬롯 (Ad placeholder) — 당분간 무료 서비스로 운영, AdSense 승인 전까지 비활성화
         <div class="ad-slot">
             <span class="ad-label" id="ad-label">Advertisement</span>
             <div class="ad-placeholder" id="ad-placeholder">Your ad could appear here</div>
         </div>
+        -->
 
         <!-- 사이트 푸터: 개인정보처리방침/이용약관/문의 -->
         <footer class="site-footer">

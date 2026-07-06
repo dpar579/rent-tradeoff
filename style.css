@@ -186,6 +186,13 @@ input[type="text"] {
     width: 96%;
 }
 
+.prop-note-box {
+    width: 96%;
+    font-family: 'Inter', Arial, sans-serif;
+    resize: vertical;
+    min-height: 60px;
+}
+
 button {
     width: 100%;
     padding: 12px;
@@ -757,16 +764,66 @@ button:hover {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    list-style: none;
 }
 
 .how-it-works-list li {
+    display: table;
+    width: 100%;
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.7;
     color: var(--ink-soft);
 }
 
 .how-it-works-list strong {
     color: var(--ink);
+}
+
+.step-label {
+    display: table-cell;
+    white-space: nowrap;
+    padding-right: 6px;
+    vertical-align: top;
+}
+
+.step-desc {
+    display: table-cell;
+    width: 100%;
+    vertical-align: top;
+}
+
+.about-bullet-list {
+    margin: 0 0 20px;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.about-bullet-list li {
+    display: table;
+    width: 100%;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+}
+
+.about-bullet-list strong {
+    color: var(--ink);
+}
+
+.bullet-label {
+    display: table-cell;
+    white-space: nowrap;
+    padding-right: 6px;
+    vertical-align: top;
+}
+
+.bullet-desc {
+    display: table-cell;
+    width: 100%;
+    vertical-align: top;
 }
 
 /* ===== Site footer ===== */
